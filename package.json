@@ -1,13 +1,12 @@
 {
-  "name": "new",
+  "name": "github-repository-search",
   "version": "1.0.0",
   "description": "",
   "keywords": [],
   "main": "src/index.tsx",
   "dependencies": {
     "@octokit/rest": "16.34.1",
-    "@types/use-persisted-state": "0.3.0",
-    "evergreen-ui": "4.21.2",
+    "evergreen-ui": "4.21.3",
     "moment": "2.24.0",
     "react": "16.11.0",
     "react-dom": "16.11.0",
@@ -15,9 +14,10 @@
     "use-persisted-state": "github:Rookout/use-persisted-state"
   },
   "devDependencies": {
-    "@types/react": "16.8.8",
-    "@types/react-dom": "16.8.2",
-    "typescript": "3.3.3"
+    "@types/react": "16.9.11",
+    "@types/react-dom": "16.9.4",
+    "@types/use-persisted-state": "0.3.0",
+    "typescript": "3.7.2"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -25,5 +25,13 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
-  "browserslist": [">0.2%", "not dead", "not ie <= 11", "not op_mini all"]
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
 }
