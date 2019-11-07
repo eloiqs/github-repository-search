@@ -10,11 +10,13 @@ export default function useSearchQuery() {
   const [personalAccessToken] = usePersonalAccessToken('');
   const [searchCriteria] = useSearchCriteria(initialState);
   const [repos, setRepos] = useState([] as SearchReposResponseItemsItem[]);
+  const [loading, setLoading] = useState(false);
 
   const q = searchCriteriaToQuery(searchCriteria);
   const { sort } = searchCriteria;
 
   useEffect(() => {
+    setLoading(true);
     new Octokit({ auth: personalAccessToken }).search
       .repos({
         q,
@@ -22,14 +24,15 @@ export default function useSearchQuery() {
       })
       .then(res => {
         setRepos(repos => [...repos, ...res.data.items]);
+        setLoading(false);
       });
   }, [personalAccessToken, q, sort]);
 
-  return repos;
+  return [repos, loading] as [SearchReposResponseItemsItem[], boolean];
 }
 
 function searchCriteriaToQuery(criteria: SearchCriteria) {
-  const created = `created:${criteria.created.from}...${criteria.created.to}`;
+  const created = `created:${criteria.created.from}..${criteria.created.to}`;
 
   if (!criteria.languages.length) return created;
 

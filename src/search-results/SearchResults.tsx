@@ -5,7 +5,7 @@ import { Repo } from '../repo/Repo';
 import useSearchQuery from '../search-query/use-search-query';
 
 export function SearchResults() {
-  const repos = useSearchQuery();
+  const [repos, loading] = useSearchQuery();
 
   return (
     <Row
@@ -15,7 +15,7 @@ export function SearchResults() {
       paddingLeft="8px"
       paddingRight="8px"
     >
-      {repos.length ? (
+      {!loading ? (
         repos.map(repo => <Repo key={repo.id} repo={repo} />)
       ) : (
         <Row justifyContent="center">
