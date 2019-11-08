@@ -5,14 +5,17 @@ import useSearchCriteria, { initialState } from './use-search-criteria';
 const languages = require('./languages.json');
 
 export function Languages() {
-  const [selectedLanguages, setSelectedLanguages] = useState([] as string[]);
   const [searchCriteria, setSearchCriteria] = useSearchCriteria(initialState);
+  const [selectedLanguages, setSelectedLanguages] = useState(
+    searchCriteria.languages
+  );
 
   useEffect(() => {
     setSearchCriteria({
       ...searchCriteria,
-      languages: searchCriteria.languages.concat(selectedLanguages)
+      languages: selectedLanguages
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedLanguages]);
 
   return (
@@ -24,13 +27,6 @@ export function Languages() {
       selected={selectedLanguages}
       onSelect={item => {
         const selected = [...selectedLanguages, item.value] as string[];
-        setSearchCriteria(criteria => {
-          console.log(criteria);
-          return {
-            ...criteria,
-            languages: criteria.languages.concat(item.value as string)
-          };
-        });
         setSelectedLanguages(selected);
       }}
       onDeselect={item => {

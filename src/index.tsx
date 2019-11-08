@@ -7,7 +7,7 @@ import './styles.css';
 
 function Index() {
   return (
-    <Column background="tint1">
+    <Column>
       <Row
         elevation={1}
         backgroundColor={defaultTheme.palette.blue.base}

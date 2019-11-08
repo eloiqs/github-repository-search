@@ -1,6 +1,5 @@
-import React from 'react';
 import { Spinner } from 'evergreen-ui';
-import { Row } from '../layout/Row';
+import React from 'react';
 import { Repo } from '../repo/Repo';
 import useSearchQuery from '../search-query/use-search-query';
 
@@ -8,20 +7,14 @@ export function SearchResults() {
   const [repos, loading] = useSearchQuery();
 
   return (
-    <Row
-      flexWrap="wrap"
-      justifyContent="center"
-      marginTop="16px"
-      paddingLeft="8px"
-      paddingRight="8px"
-    >
+    <>
       {!loading ? (
-        repos.map(repo => <Repo key={repo.id} repo={repo} />)
+        repos.map(repo => (
+          <Repo key={repo.html_url} repo={repo} marginX="16px" />
+        ))
       ) : (
-        <Row justifyContent="center">
-          <Spinner delay={500} size={40} />
-        </Row>
+        <Spinner delay={500} size={40} />
       )}
-    </Row>
+    </>
   );
 }

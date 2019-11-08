@@ -23,7 +23,7 @@ export default function useSearchQuery() {
         sort
       })
       .then(res => {
-        setRepos(repos => [...repos, ...res.data.items]);
+        setRepos(res.data.items);
         setLoading(false);
       });
   }, [personalAccessToken, q, sort]);
@@ -36,7 +36,7 @@ function searchCriteriaToQuery(criteria: SearchCriteria) {
 
   if (!criteria.languages.length) return created;
 
-  const languages = criteria.languages.reduce((lang, q) => {
+  const languages = criteria.languages.reduce((q, lang) => {
     if (!q.length) return `language:${lang}`;
     return q + `+language:${lang}`;
   }, '');

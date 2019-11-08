@@ -6,21 +6,25 @@ import { SearchResults } from '../search-results/SearchResults';
 
 export function Main() {
   return (
-    <Column>
+    <Column width="100%">
       <Row
+        marginBottom="32px"
         background="orangeTint"
-        paddingBottom="16px"
-        paddingTop="16px"
+        paddingY="16px"
         justifyContent="center"
       >
         <PersonalAccessToken />
       </Row>
-      <Row padding={16} justifyContent="flex-end">
-        <Column>
-          <Languages />
+      <Row>
+        <Column width="1032px" margin="auto">
+          <Row marginBottom="32px" paddingX="16px" justifyContent="flex-end">
+            <Languages />
+          </Row>
+          <Row flexWrap="wrap" justifyContent="center">
+            <SearchResults />
+          </Row>
         </Column>
       </Row>
-      <SearchResults />
     </Column>
   );
 }

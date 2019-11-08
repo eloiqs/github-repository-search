@@ -21,8 +21,6 @@ export function Repo({ repo, ...props }: RepoProps) {
     <Card
       width="312px"
       height="264px"
-      marginRight="8px"
-      marginLeft="8px"
       marginBottom="32px"
       elevation={2}
       background="tint2"
