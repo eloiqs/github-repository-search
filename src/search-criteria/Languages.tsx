@@ -1,6 +1,6 @@
 import { Button, SelectMenu } from 'evergreen-ui';
 import React, { useEffect, useState } from 'react';
-import useSearchCriteria, { initialState } from './use-search-criteria';
+import { initialState, useSearchCriteria } from './use-search-criteria';
 
 const languages = require('./languages.json');
 
@@ -11,12 +11,11 @@ export function Languages() {
   );
 
   useEffect(() => {
-    setSearchCriteria({
-      ...searchCriteria,
+    setSearchCriteria(criteria => ({
+      ...criteria,
       languages: selectedLanguages
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedLanguages]);
+    }));
+  }, [selectedLanguages, setSearchCriteria]);
 
   return (
     <SelectMenu
@@ -39,7 +38,7 @@ export function Languages() {
         setSelectedLanguages(selectedItems);
       }}
     >
-      <Button>
+      <Button iconBefore="filter">
         {selectedLanguages.length
           ? selectedLanguages.join(', ')
           : 'Filter languages'}

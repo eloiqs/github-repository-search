@@ -11,7 +11,7 @@
     "react": "16.11.0",
     "react-dom": "16.11.0",
     "react-scripts": "3.2.0",
-    "use-persisted-state": "github:Rookout/use-persisted-state"
+    "use-persisted-state": "github:eloiqs/use-persisted-state"
   },
   "devDependencies": {
     "@types/react": "16.9.11",
