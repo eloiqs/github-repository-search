@@ -1,7 +1,7 @@
 import { Spinner } from 'evergreen-ui';
 import React from 'react';
-import { Repo } from '../repo/Repo';
-import useSearchQuery from '../search-query/use-search-query';
+import { Repo } from '../repo';
+import { useSearchQuery } from '../search-query';
 
 export function SearchResults() {
   const [repos, loading] = useSearchQuery();

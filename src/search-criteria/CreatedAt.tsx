@@ -4,12 +4,14 @@ import { initialState, useSearchCriteria } from './use-search-criteria';
 
 export function CreatedAt() {
   const [searchCriteria, setSearchCriteria] = useSearchCriteria(initialState);
-  const [timeRange, setTimeRange] = useState(searchCriteria.timeRange);
+  const [timeRange, setTimeRange] = useState(
+    searchCriteria.timeRangeAbreviation
+  );
 
   useEffect(() => {
     setSearchCriteria(criteria => ({
       ...criteria,
-      timeRange
+      timeRangeAbreviation: timeRange
     }));
   }, [timeRange, setSearchCriteria]);
 
