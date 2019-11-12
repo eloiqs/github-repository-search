@@ -10105,9 +10105,10 @@ url@^0.11.0:
     punycode "1.3.2"
     querystring "0.2.0"
 
-"use-persisted-state@github:eloiqs/use-persisted-state":
+use-persisted-state@use-persisted-state:
   version "0.3.0"
-  resolved "https://codeload.github.com/eloiqs/use-persisted-state/tar.gz/3afaea8039e2a43f070415d164d1ed810d9edb3c"
+  resolved "https://registry.yarnpkg.com/use-persisted-state/-/use-persisted-state-0.3.0.tgz#f8e3d2fd8eee67e0c86fd596c3ea3e8121c07402"
+  integrity sha512-UlWEq0JYg7NbvcRBZ1g6Bwe4SEbYfr1wr/D5mrmfCzSxXSwsPRYygGLlsxHcW58Rf7gGwRPBT23sNVvyVn4WYg==
   dependencies:
     "@use-it/event-listener" "^0.1.2"
 
