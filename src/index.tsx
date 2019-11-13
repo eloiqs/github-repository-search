@@ -1,6 +1,6 @@
-import { Heading, defaultTheme } from 'evergreen-ui';
 import React from 'react';
 import { render } from 'react-dom';
+import { Header } from './header';
 import { Column, Row } from './layout';
 import { Main } from './main/Main';
 import './styles.css';
@@ -8,18 +8,7 @@ import './styles.css';
 function Index() {
   return (
     <Column>
-      <Row
-        elevation={1}
-        backgroundColor={defaultTheme.palette.blue.base}
-        paddingLeft="8px"
-        paddingRight="8px"
-        minHeight="64px"
-        alignItems="center"
-      >
-        <Heading size={700} color="white">
-          Gihtub Repository Search
-        </Heading>
-      </Row>
+      <Header />
       <Row>
         <Main />
       </Row>
