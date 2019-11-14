@@ -33,8 +33,8 @@ function PopoverBody({ close }: PopoverBodyProps) {
   }
 
   return (
-    <Column width="280px" padding="16px">
-      <Row paddingBottom="16px">
+    <Column width={280} padding={16}>
+      <Row paddingBottom={16}>
         <Heading>
           <Link target="_blank" href="https://github.com/settings/tokens">
             Generate a token
@@ -42,13 +42,13 @@ function PopoverBody({ close }: PopoverBodyProps) {
           and add it below to avoid hitting the rate limit.
         </Heading>
       </Row>
-      <Row paddingBottom="16px">
+      <Row paddingBottom={16}>
         <TextInput
           value={personalAccesToken}
           onChange={onPersonalAccessTokenChange}
         />
       </Row>
-      <Row paddingBottom="16px" justifyContent="flex-end">
+      <Row paddingBottom={16} justifyContent="flex-end">
         <Button appearance="primary" intent="success" onClick={onSaveClick}>
           Save
         </Button>

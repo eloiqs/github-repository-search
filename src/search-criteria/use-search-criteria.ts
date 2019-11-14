@@ -1,20 +1,23 @@
 import { SearchReposParams } from '@octokit/rest';
 import createPersistedState from 'use-persisted-state';
+import { TimeRange, toTimeRange } from '../time';
 
 export type SearchCriteria = Omit<SearchReposParams, 'q'> & {
   languages: string[];
-  timeRangeAbreviation: TimeRangeAbreviation;
+  timeRange: TimeRange;
 };
-
-export type TimeRangeAbreviation = 'yearly' | 'monthly' | 'weekly' | 'daily';
 
 export const initialState: SearchCriteria = {
   sort: 'stars',
   languages: [],
-  timeRangeAbreviation: 'yearly',
+  timeRange: toTimeRange('yearly'),
   order: 'desc',
   page: 0,
   per_page: 20
 };
 
-export const useSearchCriteria = createPersistedState('grs-search-criteria');
+const usePersistedSearchCriteria = createPersistedState('grs-search-criteria');
+
+export function useSearchCriteria() {
+  return usePersistedSearchCriteria(initialState);
+}

@@ -7,12 +7,11 @@ export function Header() {
     <Row
       elevation={1}
       backgroundColor={defaultTheme.palette.blue.base}
-      paddingLeft="8px"
-      paddingRight="8px"
-      minHeight="64px"
+      paddingX={8}
+      minHeight={64}
       alignItems="center"
     >
-      <Column paddingRight="16px">
+      <Column paddingRight={16}>
         <Heading size={700} color="white">
           Gihtub Repository Search
         </Heading>

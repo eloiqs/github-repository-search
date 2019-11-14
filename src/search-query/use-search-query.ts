@@ -1,21 +1,14 @@
 import Octokit, { SearchReposResponseItemsItem } from '@octokit/rest';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { usePersonalAccessToken } from '../personal-access-token';
-import {
-  initialState,
-  SearchCriteria,
-  useSearchCriteria
-} from '../search-criteria';
-import { toTimeRange } from '../utils';
+import { SearchCriteria } from '../search-criteria';
 
-export function useSearchQuery() {
+export function useSearchQuery(searchCriteria: SearchCriteria) {
   const [personalAccessToken] = usePersonalAccessToken('');
-  const [searchCriteria] = useSearchCriteria(initialState);
   const [repos, setRepos] = useState([] as SearchReposResponseItemsItem[]);
-  const [loading, setLoading] = useState(false);
-
-  const q = searchCriteriaToQuery(searchCriteria);
-  const { sort } = searchCriteria;
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState(searchCriteriaToQuery(searchCriteria));
+  const [sort, setSort] = useState(searchCriteria.sort);
 
   useEffect(() => {
     setLoading(true);
@@ -30,11 +23,20 @@ export function useSearchQuery() {
       });
   }, [personalAccessToken, q, sort]);
 
-  return [repos, loading] as [SearchReposResponseItemsItem[], boolean];
+  const refresh = useCallback((criteria: SearchCriteria) => {
+    setQ(searchCriteriaToQuery(criteria));
+    setSort(criteria.sort);
+  }, []);
+
+  return [repos, loading, refresh] as [
+    SearchReposResponseItemsItem[],
+    boolean,
+    (criteria: SearchCriteria) => void
+  ];
 }
 
 function searchCriteriaToQuery(criteria: SearchCriteria) {
-  const { from, to } = toTimeRange(criteria.timeRangeAbreviation);
+  const { from, to } = criteria.timeRange;
   const created = `created:${from}..${to}`;
 
   if (!criteria.languages.length) return created;

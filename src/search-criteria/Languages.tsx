@@ -1,11 +1,11 @@
 import { Button, SelectMenu } from 'evergreen-ui';
 import React, { useEffect, useState } from 'react';
-import { initialState, useSearchCriteria } from './use-search-criteria';
+import { useSearchCriteria } from './use-search-criteria';
 
 const languages = require('./languages.json');
 
 export function Languages() {
-  const [searchCriteria, setSearchCriteria] = useSearchCriteria(initialState);
+  const [searchCriteria, setSearchCriteria] = useSearchCriteria();
   const [selectedLanguages, setSelectedLanguages] = useState(
     searchCriteria.languages
   );

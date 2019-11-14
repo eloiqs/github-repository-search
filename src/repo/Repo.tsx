@@ -19,12 +19,12 @@ export type RepoProps = {
 export function Repo({ repo, ...props }: RepoProps) {
   return (
     <Card
-      width="312px"
-      height="264px"
-      marginBottom="32px"
+      width={312}
+      height={264}
+      marginBottom={32}
       elevation={2}
       background="tint2"
-      padding="16px"
+      padding={16}
       {...props}
     >
       <Column justifyContent="space-between">
@@ -40,13 +40,13 @@ function Header({ repo: { owner } }: RepoProps) {
   return (
     <Row alignItems="center">
       <Card
-        marginRight="8px"
-        minWidth="32px"
-        width="32px"
-        height="32px"
+        marginRight={8}
+        minWidth={32}
+        width={32}
+        height={32}
         overflow="hidden"
       >
-        <Image width="32px" height="32px" src={owner.avatar_url} />
+        <Image width={32} height={32} src={owner.avatar_url} />
       </Card>
       <Column justifyContent="center">
         <Link
@@ -79,7 +79,7 @@ function Body({ repo }: RepoProps) {
                 </Heading>
               </Link>
             </Row>
-            <Row paddingBottom="12px">
+            <Row paddingBottom={12}>
               <Text size={300} color="muted">
                 Built by ·{' '}
                 <Link
@@ -95,7 +95,7 @@ function Body({ repo }: RepoProps) {
           </Column>
           <Column />
         </Row>
-        <Row height="56px">
+        <Row height={56}>
           <FadeText>{repo.description}</FadeText>
         </Row>
       </Column>
@@ -106,17 +106,17 @@ function Body({ repo }: RepoProps) {
 function Footer({ repo }: RepoProps) {
   return (
     <Row>
-      <Column paddingRight="12px">
+      <Column paddingRight={12}>
         <Text>{repo.language}</Text>
       </Column>
-      <Column paddingRight="12px">
+      <Column paddingRight={12}>
         <Link
           href={`${repo.html_url}/stargazers`}
           color="neutral"
           textDecoration="none"
         >
           <Row>
-            <Column paddingRight="4px">
+            <Column paddingRight={4}>
               <Icon icon="star-empty" color="default" />
             </Column>
             <Column>
@@ -125,14 +125,14 @@ function Footer({ repo }: RepoProps) {
           </Row>
         </Link>
       </Column>
-      <Column paddingRight="12px">
+      <Column paddingRight={12}>
         <Link
           href={`${repo.html_url}/network/members`}
           color="neutral"
           textDecoration="none"
         >
           <Row>
-            <Column paddingRight="4px">
+            <Column paddingRight={4}>
               <Icon icon="fork" color="default" />
             </Column>
             <Column>
@@ -148,7 +148,7 @@ function Footer({ repo }: RepoProps) {
           textDecoration="none"
         >
           <Row>
-            <Column paddingRight="4px">
+            <Column paddingRight={4}>
               <Icon icon="issue" color="default" />
             </Column>
             <Column>
