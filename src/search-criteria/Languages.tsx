@@ -1,5 +1,5 @@
-import { Button, SelectMenu } from 'evergreen-ui';
-import React, { useEffect, useState } from 'react';
+import { Button, SelectMenu, SelectMenuItem } from 'evergreen-ui';
+import React, { useState } from 'react';
 import { useSearchCriteria } from './use-search-criteria';
 
 const languages = require('./languages.json');
@@ -10,12 +10,29 @@ export function Languages() {
     searchCriteria.languages
   );
 
-  useEffect(() => {
+  function onSelect(item: SelectMenuItem) {
+    const selected = [...selectedLanguages, item.value] as string[];
+    setSelectedLanguages(selected);
     setSearchCriteria(criteria => ({
       ...criteria,
-      languages: selectedLanguages
+      languages: selected
     }));
-  }, [selectedLanguages, setSearchCriteria]);
+  }
+
+  function onDeselect(deselectedItem: SelectMenuItem) {
+    const languages = selectedLanguages.filter(
+      language => language !== deselectedItem.value
+    );
+    setSelectedLanguages(languages);
+    setSearchCriteria(criteria => ({
+      ...criteria,
+      languages
+    }));
+  }
+
+  const label = selectedLanguages.length
+    ? selectedLanguages.join(', ')
+    : 'Filter languages';
 
   return (
     <SelectMenu
@@ -24,25 +41,10 @@ export function Languages() {
       title="Filter languages"
       options={languages}
       selected={selectedLanguages}
-      onSelect={item => {
-        const selected = [...selectedLanguages, item.value] as string[];
-        setSelectedLanguages(selected);
-      }}
-      onDeselect={item => {
-        const deselectedItemIndex = selectedLanguages.indexOf(
-          item.value as string
-        );
-        const selectedItems = selectedLanguages.filter(
-          (_item, i) => i !== deselectedItemIndex
-        );
-        setSelectedLanguages(selectedItems);
-      }}
+      onSelect={onSelect}
+      onDeselect={onDeselect}
     >
-      <Button iconBefore="filter">
-        {selectedLanguages.length
-          ? selectedLanguages.join(', ')
-          : 'Filter languages'}
-      </Button>
+      <Button iconBefore="filter">{label}</Button>
     </SelectMenu>
   );
 }

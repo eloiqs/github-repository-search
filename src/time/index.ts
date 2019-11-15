@@ -11,35 +11,39 @@ export type TimeRange = {
   to: string;
 };
 
+const RECURENSE_TO_INCREMENTS: Readonly<Record<
+  TimeRangeRecurense,
+  TimeRangeIncrements
+>> = {
+  yearly: 'year',
+  monthly: 'month',
+  weekly: 'week',
+  daily: 'day'
+};
+
 export function toTimeRangeIncrement(
   timeRangeRecurense: TimeRangeRecurense
 ): TimeRangeIncrements {
-  switch (timeRangeRecurense) {
-    case 'yearly':
-      return 'year';
-    case 'monthly':
-      return 'month';
-    case 'weekly':
-      return 'week';
-    case 'daily':
-      return 'day';
-  }
+  return RECURENSE_TO_INCREMENTS[timeRangeRecurense];
 }
+
+const INCREMENTS_TO_RECURENSE: Readonly<Record<
+  TimeRangeIncrements,
+  TimeRangeRecurense
+>> = {
+  year: 'yearly',
+  month: 'monthly',
+  week: 'weekly',
+  day: 'daily'
+};
 
 export function toTimeRangeRecurense(
   timeRangeIncrement: TimeRangeIncrements
 ): TimeRangeRecurense {
-  switch (timeRangeIncrement) {
-    case 'year':
-      return 'yearly';
-    case 'month':
-      return 'monthly';
-    case 'week':
-      return 'weekly';
-    case 'day':
-      return 'daily';
-  }
+  return INCREMENTS_TO_RECURENSE[timeRangeIncrement];
 }
+
+const TIME_RANGE_FORMAT = 'YYYY-MM-DD';
 
 export function toTimeRange(
   timeRangeRecurense: TimeRangeRecurense,
@@ -49,11 +53,11 @@ export function toTimeRange(
 
   const from = moment()
     .subtract(1 + timeRangeOffset, increments)
-    .format('YYYY-MM-DD');
+    .format(TIME_RANGE_FORMAT);
 
   const to = moment(from)
     .add(1 + timeRangeOffset, increments)
-    .format('YYYY-MM-DD');
+    .format(TIME_RANGE_FORMAT);
 
   return {
     increments,
@@ -66,8 +70,10 @@ export function fromNow(timeRange: TimeRange) {
   return capitalize(moment(timeRange.from).fromNow());
 }
 
+const PRETTY_FORMAT = 'MMMM DD, YYYY';
+
 export function prettyFormat(timeRange: TimeRange) {
-  const from = moment(timeRange.from).format('MMMM DD, YYYY');
-  const to = moment(timeRange.to).format('MMMM DD, YYYY');
+  const from = moment(timeRange.from).format(PRETTY_FORMAT);
+  const to = moment(timeRange.to).format(PRETTY_FORMAT);
   return `${from} – ${to}`;
 }

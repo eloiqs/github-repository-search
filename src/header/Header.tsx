@@ -17,7 +17,7 @@ export function Header() {
         </Heading>
       </Column>
       <Column>
-        <Link href="https://kamranahmed.info/githunt/">
+        <Link href="https://kamranahmed.info/githunt/" textDecoration="none">
           <Text size={500} color="white">
             – A shameless{' '}
             <Text textDecoration="underline" color="white">

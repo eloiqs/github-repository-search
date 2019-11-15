@@ -7,16 +7,16 @@ import { useSearchQuery } from '../search-query';
 
 export type SearchProps = {
   criteria: SearchCriteria;
-  header?(): JSX.Element | false;
-  footer?(): JSX.Element | false;
+  header?: JSX.Element | false;
+  footer?: JSX.Element | false;
 };
 
 export function Search({ criteria, header, footer }: SearchProps) {
-  const [repos, isLoading] = useSearchQuery(criteria);
+  const { repos, isLoading } = useSearchQuery(criteria);
 
   return (
     <>
-      {header && header()}
+      {header}
       {isLoading ? (
         <Row justifyContent="center">
           <Spinner size={40} />
@@ -28,7 +28,7 @@ export function Search({ criteria, header, footer }: SearchProps) {
               <Repo key={repo.html_url} repo={repo} marginX={16} />
             ))}
           </Row>
-          {footer && footer()}
+          {footer}
         </>
       )}
     </>

@@ -1,38 +1,38 @@
 import Octokit, { SearchReposResponseItemsItem } from '@octokit/rest';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePersonalAccessToken } from '../personal-access-token';
 import { SearchCriteria } from '../search-criteria';
 
-export function useSearchQuery(searchCriteria: SearchCriteria) {
+type SearchQuery = {
+  repos: SearchReposResponseItemsItem[];
+  isLoading: boolean;
+};
+
+const initialState: SearchQuery = { repos: [], isLoading: true };
+
+export function useSearchQuery(searchCriteria: SearchCriteria): SearchQuery {
   const [personalAccessToken] = usePersonalAccessToken('');
-  const [repos, setRepos] = useState([] as SearchReposResponseItemsItem[]);
-  const [loading, setLoading] = useState(true);
-  const [q, setQ] = useState(searchCriteriaToQuery(searchCriteria));
-  const [sort, setSort] = useState(searchCriteria.sort);
+  const [query, setQuery] = useState(initialState);
+
+  const q = searchCriteriaToQuery(searchCriteria);
+  const { sort } = searchCriteria;
 
   useEffect(() => {
-    setLoading(true);
+    setQuery(initialState);
     new Octokit({ auth: personalAccessToken }).search
       .repos({
         q,
         sort
       })
-      .then(res => {
-        setRepos(res.data.items);
-        setLoading(false);
+      .then(({ data }) => {
+        setQuery({
+          repos: data.items,
+          isLoading: false
+        });
       });
   }, [personalAccessToken, q, sort]);
 
-  const refresh = useCallback((criteria: SearchCriteria) => {
-    setQ(searchCriteriaToQuery(criteria));
-    setSort(criteria.sort);
-  }, []);
-
-  return [repos, loading, refresh] as [
-    SearchReposResponseItemsItem[],
-    boolean,
-    (criteria: SearchCriteria) => void
-  ];
+  return query;
 }
 
 function searchCriteriaToQuery(criteria: SearchCriteria) {

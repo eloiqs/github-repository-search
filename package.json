@@ -5,13 +5,13 @@
   "keywords": [],
   "main": "src/index.tsx",
   "dependencies": {
-    "@octokit/rest": "16.34.1",
-    "evergreen-ui": "4.21.3",
+    "@octokit/rest": "16.35.0",
+    "evergreen-ui": "4.21.5",
     "moment": "2.24.0",
-    "react": "16.11.0",
-    "react-dom": "16.11.0",
+    "react": "16.12.0",
+    "react-dom": "16.12.0",
     "react-scripts": "3.2.0",
-    "use-persisted-state": "use-persisted-state"
+    "use-persisted-state": "0.3.0"
   },
   "devDependencies": {
     "@types/react": "16.9.11",
