@@ -1,11 +1,11 @@
 import { Button, SelectMenu, SelectMenuItem } from 'evergreen-ui';
 import React, { useState } from 'react';
+import { useLanguages } from './use-languages';
 import { useSearchCriteria } from './use-search-criteria';
-
-const languages = require('./languages.json');
 
 export function Languages() {
   const [searchCriteria, setSearchCriteria] = useSearchCriteria();
+  const { languages } = useLanguages();
   const [selectedLanguages, setSelectedLanguages] = useState(
     searchCriteria.languages
   );
@@ -34,12 +34,14 @@ export function Languages() {
     ? selectedLanguages.join(', ')
     : 'Filter languages';
 
+  const options = languages.map(lang => ({ label: lang, value: lang }));
+
   return (
     <SelectMenu
       isMultiSelect
       closeOnSelect
       title="Filter languages"
-      options={languages}
+      options={options}
       selected={selectedLanguages}
       onSelect={onSelect}
       onDeselect={onDeselect}
