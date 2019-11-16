@@ -1,9 +1,8 @@
-import { Spinner } from 'evergreen-ui';
 import React from 'react';
-import { Row } from '../layout';
 import { Repo } from '../repo';
 import { SearchCriteria } from '../search-criteria';
 import { useSearchQuery } from '../search-query';
+import { Row, Spinner } from '../ui';
 
 export type SearchProps = {
   criteria: SearchCriteria;

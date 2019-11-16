@@ -1,16 +1,18 @@
 import { SearchReposResponseItemsItem } from '@octokit/rest';
+import moment from 'moment';
+import React from 'react';
 import {
   Card,
   CardProps,
+  Column,
+  FadeText,
   Heading,
+  Icon,
   Image,
   Link,
-  Text,
-  Icon
-} from 'evergreen-ui';
-import moment from 'moment';
-import React from 'react';
-import { Column, FadeText, Row } from '../layout';
+  Row,
+  Text
+} from '../ui';
 
 export type RepoProps = {
   repo: SearchReposResponseItemsItem;

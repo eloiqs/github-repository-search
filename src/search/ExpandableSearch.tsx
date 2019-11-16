@@ -1,6 +1,4 @@
-import { Button, Heading, Text } from 'evergreen-ui';
 import React, { useEffect, useState } from 'react';
-import { Column, Row } from '../layout';
 import { Search } from '.';
 import {
   CreatedAt,
@@ -11,11 +9,12 @@ import {
 import {
   fromNow,
   prettyFormat,
-  toTimeRange,
-  toTimeRangeRecurense,
   TimeRange,
-  TimeRangeIncrements
+  TimeRangeIncrements,
+  toTimeRange,
+  toTimeRangeRecurense
 } from '../time';
+import { Button, Column, Heading, Row, Text } from '../ui';
 
 type Search = {
   criteria: SearchCriteria;

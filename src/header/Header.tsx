@@ -1,6 +1,5 @@
-import { defaultTheme, Heading, Link, Text } from 'evergreen-ui';
 import React from 'react';
-import { Column, Row } from '../layout';
+import { Column, defaultTheme, Heading, Link, Row, Text } from '../ui';
 
 export function Header() {
   return (

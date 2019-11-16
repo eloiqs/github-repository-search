@@ -1,7 +1,7 @@
 import React from 'react';
-import { Column, Row } from '../layout';
 import { PersonalAccessToken } from '../personal-access-token';
 import { ExpandableSearch } from '../search';
+import { Column, Row } from '../ui';
 
 export function Main() {
   return (

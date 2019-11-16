@@ -1,6 +1,5 @@
-import { Button, Heading, Link, Popover, TextInput } from 'evergreen-ui';
 import React, { ChangeEvent, useState } from 'react';
-import { Column, Row } from '../layout';
+import { Button, Column, Heading, Link, Popover, Row, TextInput } from '../ui';
 import { usePersonalAccessToken } from './use-personal-access-token';
 
 export function PersonalAccessToken() {
