@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pane, PaneProps } from 'evergreen-ui';
+import { Pane, PaneProps } from './Pane';
 
 export type ScrollProps = Omit<PaneProps, 'overflow'>;
 

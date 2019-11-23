@@ -1,5 +1,6 @@
 import React from 'react';
-import { Text, TextProps, Pane } from 'evergreen-ui';
+import { Pane } from './Pane';
+import { Text, TextProps } from './Text';
 
 export type FadeTextProps = TextProps;
 
