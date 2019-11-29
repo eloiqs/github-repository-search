@@ -18,6 +18,7 @@ export function useSearchQuery(searchCriteria: SearchCriteria): SearchQuery {
   const { sort } = searchCriteria;
 
   useEffect(() => {
+    let isCanceled = false;
     setQuery(initialState);
     new Octokit({ auth: personalAccessToken }).search
       .repos({
@@ -25,11 +26,14 @@ export function useSearchQuery(searchCriteria: SearchCriteria): SearchQuery {
         sort
       })
       .then(({ data }) => {
-        setQuery({
-          repos: data.items,
-          isLoading: false
-        });
+        if (!isCanceled) {
+          setQuery({
+            repos: data.items,
+            isLoading: false
+          });
+        }
       });
+    return () => void (isCanceled = true);
   }, [personalAccessToken, q, sort]);
 
   return query;

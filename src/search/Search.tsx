@@ -18,7 +18,7 @@ export function Search({ criteria, header, footer }: SearchProps) {
       {header}
       {isLoading ? (
         <Row justifyContent="center">
-          <Spinner size={40} />
+          <Spinner size={40} data-testid="spinner" />
         </Row>
       ) : (
         <>

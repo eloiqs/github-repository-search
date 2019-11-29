@@ -56,7 +56,7 @@ export function toTimeRange(
     .format(TIME_RANGE_FORMAT);
 
   const to = moment(from)
-    .add(1 + timeRangeOffset, increments)
+    .add(1, increments)
     .format(TIME_RANGE_FORMAT);
 
   return {
