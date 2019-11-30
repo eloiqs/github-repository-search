@@ -1,1 +1,1 @@
-export * from './search-repos';
+export * from './fetch-repos';

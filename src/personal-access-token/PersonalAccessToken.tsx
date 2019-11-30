@@ -16,7 +16,7 @@ function PopoverBody({ close }: PopoverBodyProps) {
   const [
     persistedPersonalAccessToken,
     setPersistedPersonalAccessToken
-  ] = usePersonalAccessToken('');
+  ] = usePersonalAccessToken();
 
   const [personalAccesToken, setPersonalAccessToken] = useState(
     persistedPersonalAccessToken

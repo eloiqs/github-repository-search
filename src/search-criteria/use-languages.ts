@@ -1,5 +1,6 @@
 import jsyaml from 'js-yaml';
 import { useEffect, useState } from 'react';
+import { useMountedState } from 'react-use';
 import createPersistedState from 'use-persisted-state';
 
 const githubLinguistYmlUrl =
@@ -8,6 +9,7 @@ const githubLinguistYmlUrl =
 const usePersistedLanguages = createPersistedState('grs-languages');
 
 export function useLanguages() {
+  const isMounted = useMountedState();
   const [isLoading, setIsLoading] = useState(true);
   const [persistedLanguages, setPersistedLanguages] = usePersistedLanguages(
     [] as string[]
@@ -20,13 +22,15 @@ export function useLanguages() {
         const res = await fetch(githubLinguistYmlUrl);
         const yml = await res.text();
         const json = jsyaml.safeLoad(yml);
-        setPersistedLanguages(Object.keys(json));
-        setIsLoading(false);
+        if (isMounted()) {
+          setPersistedLanguages(Object.keys(json));
+          setIsLoading(false);
+        }
       })();
     } else {
       setIsLoading(false);
     }
-  }, [persistedLanguages, setPersistedLanguages]);
+  }, [isMounted, persistedLanguages, setPersistedLanguages]);
 
   return { languages: persistedLanguages, isLoading };
 }

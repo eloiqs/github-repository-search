@@ -1,15 +1,15 @@
-import { SearchReposResponseItemsItem } from '@octokit/rest';
+import { Repo } from '../repo';
 import { TimeRange } from '../time';
 
 export type SearchQuery = {
   timeRange: TimeRange;
   loading: boolean;
-  results: SearchReposResponseItemsItem[] | null;
+  results: Repo[] | null;
 };
 
 export function createSearchQuery(
   timeRange: TimeRange,
-  results: SearchReposResponseItemsItem[] | null = null,
+  results: Repo[] | null = null,
   loading = true
 ): SearchQuery {
   return {

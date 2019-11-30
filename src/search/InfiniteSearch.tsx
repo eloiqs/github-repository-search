@@ -1,19 +1,20 @@
 import React, { useEffect } from 'react';
-import { usePersonalAccessToken } from '../personal-access-token';
-import { Repo } from '../repo';
-import { Languages, TimeRanges, useSearchCriteria } from '../search-criteria';
+import { RepoCard } from '../repo';
+import {
+  LanguagesSelectMenu,
+  TimeRangesPopoverMenu,
+  useSearchCriteria
+} from '../search-criteria';
+import { SearchTypesSelectField, useSearchType } from '../search-type';
 import { createTimeRange, fromNow, prettyFormat, TimeRange } from '../time';
 import { Button, Column, Heading, IconButton, Row, Spinner, Text } from '../ui';
 import { SearchQuery as Query } from './search-query';
 import { useInfiniteSearch } from './use-infinite-search';
 
 export function InfiniteSearch() {
-  const [personalAccessToken] = usePersonalAccessToken('');
+  const [searchType] = useSearchType();
   const [searchCriteria, , refreshTimeRange] = useSearchCriteria();
-  const [search, load, loadNext] = useInfiniteSearch(
-    searchCriteria,
-    personalAccessToken
-  );
+  const [search, load, loadNext] = useInfiniteSearch();
 
   useEffect(() => {
     load();
@@ -39,13 +40,14 @@ export function InfiniteSearch() {
           {search.queries.map(query => (
             <SearchQuery key={JSON.stringify(query.timeRange)} query={query} />
           ))}
-          {search.queries.every(query => !query.loading) && (
-            <Row paddingBottom={32} justifyContent="center">
-              <Button onClick={onLoadNext}>
-                Load next {searchCriteria.timeRange.increments}
-              </Button>
-            </Row>
-          )}
+          {searchType === 'most-starred' &&
+            search.queries.every(query => !query.loading) && (
+              <Row paddingBottom={32} justifyContent="center">
+                <Button onClick={onLoadNext}>
+                  Load next {searchCriteria.timeRange.increments}
+                </Button>
+              </Row>
+            )}
         </>
       )}
     </>
@@ -54,17 +56,15 @@ export function InfiniteSearch() {
 
 function SearchHeader({ refresh }: { refresh(): void }) {
   return (
-    <Row
-      paddingX={16}
-      alignItems="center"
-      marginBottom={32}
-      justifyContent="flex-end"
-    >
-      <Column marginRight={16}>
-        <Languages />
+    <Row paddingX={16} alignItems="center" marginBottom={32}>
+      <Column grow>
+        <SearchTypesSelectField />
       </Column>
       <Column marginRight={16}>
-        <TimeRanges />
+        <LanguagesSelectMenu />
+      </Column>
+      <Column marginRight={16}>
+        <TimeRangesPopoverMenu />
       </Column>
       <Column>
         <IconButton icon="refresh" onClick={refresh} data-testid="refresh" />
@@ -82,7 +82,12 @@ function SearchQuery({ query }: { query: Query }) {
         <>
           <SearchQueryHeader timeRange={query.timeRange} />
           {(query.results || []).map(repo => (
-            <Repo key={repo.html_url} repo={repo} marginX={16} />
+            <RepoCard
+              key={repo.url}
+              repo={repo}
+              timeRange={query.timeRange}
+              marginX={16}
+            />
           ))}
         </>
       )}

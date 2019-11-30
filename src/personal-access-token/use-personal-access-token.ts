@@ -1,5 +1,19 @@
 import createPersistedState from 'use-persisted-state';
 
-export const usePersonalAccessToken = createPersistedState(
+const usePersistedPersonalAccessToken = createPersistedState(
   'grs-github-personal-access-token'
 );
+
+const initialState = '';
+
+export function usePersonalAccessToken() {
+  const [
+    persistedPersonalAccessToken,
+    setPersistedPersonalAccessToken
+  ] = usePersistedPersonalAccessToken(initialState);
+
+  return [persistedPersonalAccessToken, setPersistedPersonalAccessToken] as [
+    typeof persistedPersonalAccessToken,
+    typeof setPersistedPersonalAccessToken
+  ];
+}

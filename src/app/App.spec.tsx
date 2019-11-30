@@ -1,42 +1,53 @@
+import { fetchRepositories } from '@huchenme/github-trending';
 import Octokit, { SearchReposResponseItemsItem } from '@octokit/rest';
 import '@testing-library/jest-dom/extend-expect';
 import { act, fireEvent, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { set as setDate } from 'mockdate';
 import React from 'react';
+import { TrendingRepo } from '../api/trending-repos';
 import { createSearchCriteria } from '../search-criteria';
 import { toTimeRange } from '../time';
 import { App } from './App';
 
-let mockSearchRepos: jest.Mock;
-
-let mockResolveRepos: (
+let mockMostStarredReposResolve: (
   response: Octokit.Response<Octokit.SearchReposResponse>
 ) => void;
 
-jest.mock('@octokit/rest', () => {
-  return jest.fn(() => {
-    mockSearchRepos = jest.fn(
-      () =>
-        new Promise(resolve => {
-          mockResolveRepos = resolve;
-        })
-    );
-    return {
-      search: {
-        repos: mockSearchRepos
-      }
-    };
-  });
-});
+let mockMostStarredReposRequest = jest.fn(
+  () =>
+    new Promise(resolve => {
+      mockMostStarredReposResolve = resolve;
+    })
+);
 
-function createSearchReposResponse(
+jest.mock('@octokit/rest', () =>
+  jest.fn(() => ({
+    search: {
+      repos: mockMostStarredReposRequest
+    }
+  }))
+);
+
+function createMostStarredReposResponse(
   items: Partial<SearchReposResponseItemsItem>[]
 ) {
   return {
     data: { items: items.map(item => ({ ...item, owner: {} })) }
   } as Octokit.Response<Octokit.SearchReposResponse>;
 }
+
+let mockTrendingReposResolve: ((response: TrendingRepo[]) => void)[] = [];
+const mockTrendingReposRequest: jest.Mock = fetchRepositories;
+
+jest.mock('@huchenme/github-trending', () => ({
+  fetchRepositories: jest.fn(
+    () =>
+      new Promise(resolve => {
+        mockTrendingReposResolve.push(resolve);
+      })
+  )
+}));
 
 afterEach(() => {
   localStorage.clear();
@@ -51,14 +62,16 @@ test('searches repos with the default criteria', async () => {
   expect(getByText('Yearly')).toBeVisible();
   expect(getByTestId('spinner')).toBeVisible();
   expect(queryByText('Load next year')).toBeNull();
-  expect(mockSearchRepos).toBeCalledWith({
+  expect(mockMostStarredReposRequest).toBeCalledWith({
     q: 'created:2018-11-27..2019-11-27',
     sort: 'stars'
   });
 
   await act(async () => {
-    mockResolveRepos(
-      createSearchReposResponse([{ html_url: 'repo_url', name: 'some repo' }])
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
+        { html_url: 'repo_url', name: 'some repo' }
+      ])
     );
   });
 
@@ -85,12 +98,11 @@ test('searches repos with the localStorage criteria', async () => {
   expect(getByText('Weekly')).toBeVisible();
   expect(getByTestId('spinner')).toBeVisible();
   expect(queryByText('Load next week')).toBeNull();
-  expect(mockSearchRepos).toBeCalledWith({
+  expect(mockMostStarredReposRequest).toBeCalledWith({
     q: 'language:JavaScript+language:TypeScript+created:2019-11-20..2019-11-27',
     sort: 'stars'
   });
   expect(JSON.parse(localStorage.getItem('grs-search-criteria'))).toEqual({
-    sort: 'stars',
     languages: ['JavaScript', 'TypeScript'],
     timeRange: {
       increments: 'week',
@@ -103,8 +115,10 @@ test('searches repos with the localStorage criteria', async () => {
   });
 
   await act(async () => {
-    mockResolveRepos(
-      createSearchReposResponse([{ html_url: 'repo_url', name: 'some repo' }])
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
+        { html_url: 'repo_url', name: 'some repo' }
+      ])
     );
   });
 
@@ -121,8 +135,10 @@ test('allows loading the next increment of results', async () => {
   );
 
   await act(async () => {
-    mockResolveRepos(
-      createSearchReposResponse([{ html_url: 'repo_url', name: 'some repo' }])
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
+        { html_url: 'repo_url', name: 'some repo' }
+      ])
     );
   });
 
@@ -135,14 +151,14 @@ test('allows loading the next increment of results', async () => {
   expect(getByTestId('spinner')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
   expect(queryByText('Load next year')).toBeNull();
-  expect(mockSearchRepos).toBeCalledWith({
+  expect(mockMostStarredReposRequest).toBeCalledWith({
     q: 'created:2017-11-27..2018-11-27',
     sort: 'stars'
   });
 
   await act(async () => {
-    mockResolveRepos(
-      createSearchReposResponse([
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
         { html_url: 'other_repo_url', name: 'some other repo' }
       ])
     );
@@ -171,16 +187,18 @@ test('searches repos when the language changes', async () => {
   } = render(<App />);
 
   await act(async () => {
-    mockResolveRepos(
-      createSearchReposResponse([{ html_url: 'repo_url', name: 'some repo' }])
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
+        { html_url: 'repo_url', name: 'some repo' }
+      ])
     );
   });
 
   fireEvent.click(getByText('Load next year'));
 
   await act(async () => {
-    mockResolveRepos(
-      createSearchReposResponse([
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
         { html_url: 'other_repo_url', name: 'some other repo' }
       ])
     );
@@ -205,14 +223,16 @@ test('searches repos when the language changes', async () => {
   expect(getByTestId('spinner')).toBeVisible();
   expect(queryByText('Load next year')).toBeNull();
   expect(queryByText('2 years ago')).toBeNull();
-  expect(mockSearchRepos).toBeCalledWith({
+  expect(mockMostStarredReposRequest).toBeCalledWith({
     q: 'language:TypeScript+created:2018-11-27..2019-11-27',
     sort: 'stars'
   });
 
   await act(async () => {
-    mockResolveRepos(
-      createSearchReposResponse([{ html_url: 'repo_url', name: 'some repo' }])
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
+        { html_url: 'repo_url', name: 'some repo' }
+      ])
     );
   });
 
@@ -233,16 +253,18 @@ test('searches repos when the time increment changes', async () => {
   } = render(<App />);
 
   await act(async () => {
-    mockResolveRepos(
-      createSearchReposResponse([{ html_url: 'repo_url', name: 'some repo' }])
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
+        { html_url: 'repo_url', name: 'some repo' }
+      ])
     );
   });
 
   fireEvent.click(getByText('Load next year'));
 
   await act(async () => {
-    mockResolveRepos(
-      createSearchReposResponse([
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
         { html_url: 'other_repo_url', name: 'some other repo' }
       ])
     );
@@ -262,14 +284,16 @@ test('searches repos when the time increment changes', async () => {
   expect(getByTestId('spinner')).toBeVisible();
   expect(queryByText('Load next week')).toBeNull();
   expect(queryByText('2 years ago')).toBeNull();
-  expect(mockSearchRepos).toBeCalledWith({
+  expect(mockMostStarredReposRequest).toBeCalledWith({
     q: 'created:2019-11-20..2019-11-27',
     sort: 'stars'
   });
 
   await act(async () => {
-    mockResolveRepos(
-      createSearchReposResponse([{ html_url: 'repo_url', name: 'some repo' }])
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
+        { html_url: 'repo_url', name: 'some repo' }
+      ])
     );
   });
 
@@ -286,8 +310,10 @@ test('allows refreshing the search with an updated time range', async () => {
   );
 
   await act(async () => {
-    mockResolveRepos(
-      createSearchReposResponse([{ html_url: 'repo_url', name: 'some repo' }])
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
+        { html_url: 'repo_url', name: 'some repo' }
+      ])
     );
   });
 
@@ -295,8 +321,8 @@ test('allows refreshing the search with an updated time range', async () => {
   fireEvent.click(getByText('Load next year'));
 
   await act(async () => {
-    mockResolveRepos(
-      createSearchReposResponse([
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
         { html_url: 'other_repo_url', name: 'some other repo' }
       ])
     );
@@ -309,14 +335,16 @@ test('allows refreshing the search with an updated time range', async () => {
   expect(getByTestId('spinner')).toBeVisible();
   expect(queryByText('Load next year')).toBeNull();
   expect(queryByText('2 years ago')).toBeNull();
-  expect(mockSearchRepos).toBeCalledWith({
+  expect(mockMostStarredReposRequest).toBeCalledWith({
     q: 'created:2018-11-28..2019-11-28',
     sort: 'stars'
   });
 
   await act(async () => {
-    mockResolveRepos(
-      createSearchReposResponse([{ html_url: 'repo_url', name: 'some repo' }])
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
+        { html_url: 'repo_url', name: 'some repo' }
+      ])
     );
   });
 
@@ -325,4 +353,56 @@ test('allows refreshing the search with an updated time range', async () => {
   expect(getByText('A year ago')).toBeVisible();
   expect(getByText('November 28, 2018 – November 28, 2019')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
+});
+
+test('allows searching for trending repos', async () => {
+  localStorage.setItem(
+    'grs-languages',
+    JSON.stringify(['JavaScript', 'TypeScript'])
+  );
+  localStorage.setItem(
+    'grs-search-criteria',
+    JSON.stringify(
+      createSearchCriteria(['JavaScript', 'TypeScript'], toTimeRange('daily'))
+    )
+  );
+
+  const { getByText, queryByText, getByLabelText } = render(<App />);
+
+  await act(async () => {
+    mockMostStarredReposResolve(
+      createMostStarredReposResponse([
+        { html_url: 'repo_url', name: 'some repo' }
+      ])
+    );
+  });
+
+  expect((getByText('Most starred') as HTMLOptionElement).selected).toBe(true);
+
+  await act(async () => {
+    userEvent.selectOptions(getByLabelText('Search type'), 'trending');
+  });
+
+  expect((getByText('Trending') as HTMLOptionElement).selected).toBe(true);
+  expect(mockTrendingReposRequest).toBeCalledWith({
+    since: 'daily',
+    language: 'TypeScript'
+  });
+  expect(mockTrendingReposRequest).toBeCalledWith({
+    since: 'daily',
+    language: 'JavaScript'
+  });
+
+  await act(async () => {
+    mockTrendingReposResolve.pop()([
+      { name: 'some repo', url: 'repo_url' } as TrendingRepo
+    ]);
+    mockTrendingReposResolve.pop()([
+      { name: 'some other repo', url: 'other_repo_url' } as TrendingRepo
+    ]);
+  });
+
+  expect(getByText('some repo')).toBeVisible();
+  expect(getByText('some other repo')).toBeVisible();
+  expect(queryByText('Load next day')).toBeNull();
 });

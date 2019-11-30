@@ -1,32 +1,38 @@
 import { useCallback, useState } from 'react';
 import { useMountedState } from 'react-use';
-import { searchRepos } from '../api';
-import { createSearchCriteria, SearchCriteria } from '../search-criteria';
+import { fetchRepos } from '../api';
+import { usePersonalAccessToken } from '../personal-access-token';
+import { createSearchCriteria, useSearchCriteria } from '../search-criteria';
+import { useSearchType } from '../search-type';
 import { TimeRange } from '../time';
 import { createSearch } from './search';
 import { createSearchQuery } from './search-query';
 
-export function useInfiniteSearch(
-  searchCriteria: SearchCriteria,
-  personalAccessToken: string
-) {
+export function useInfiniteSearch() {
   const isMounted = useMountedState();
+  const [personalAccessToken] = usePersonalAccessToken();
+  const [searchType] = useSearchType();
+  const [searchCriteria] = useSearchCriteria();
   const [search, setSearch] = useState(createSearch());
 
   const load = useCallback(async () => {
     setSearch(createSearch([createSearchQuery(searchCriteria.timeRange)]));
 
-    const { data } = await searchRepos(personalAccessToken, searchCriteria);
+    const repos = await fetchRepos(
+      searchType,
+      searchCriteria,
+      personalAccessToken
+    );
 
     if (isMounted()) {
       setSearch(
         createSearch(
-          [createSearchQuery(searchCriteria.timeRange, data.items, false)],
+          [createSearchQuery(searchCriteria.timeRange, repos, false)],
           false
         )
       );
     }
-  }, [isMounted, personalAccessToken, searchCriteria]);
+  }, [isMounted, personalAccessToken, searchCriteria, searchType]);
 
   const loadNext = useCallback(
     async (timeRange: TimeRange) => {
@@ -41,19 +47,23 @@ export function useInfiniteSearch(
         timeRange
       );
 
-      const { data } = await searchRepos(personalAccessToken, nextCriteria);
+      const repos = await fetchRepos(
+        searchType,
+        nextCriteria,
+        personalAccessToken
+      );
 
       if (isMounted()) {
         setSearch(search => {
           const queries = [
             ...search.queries.filter(query => query !== nextQuery),
-            createSearchQuery(timeRange, data.items, false)
+            createSearchQuery(timeRange, repos, false)
           ];
           return createSearch(queries, false);
         });
       }
     },
-    [isMounted, personalAccessToken, searchCriteria]
+    [isMounted, personalAccessToken, searchCriteria.languages, searchType]
   );
 
   return [search, load, loadNext] as [

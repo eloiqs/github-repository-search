@@ -1,7 +1,7 @@
 import { SearchReposParams } from '@octokit/rest';
 import { TimeRange, toTimeRange } from '../time';
 
-export type SearchCriteria = Omit<SearchReposParams, 'q'> & {
+export type SearchCriteria = Omit<SearchReposParams, 'q' | 'star'> & {
   languages: string[];
   timeRange: TimeRange;
 };
@@ -13,7 +13,6 @@ export function createSearchCriteria(
   return {
     languages,
     timeRange,
-    sort: 'stars',
     order: 'desc',
     page: 0,
     per_page: 20

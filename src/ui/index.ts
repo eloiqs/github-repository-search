@@ -12,6 +12,7 @@ export * from './Menu';
 export * from './Popover';
 export * from './Row';
 export * from './Scroll';
+export * from './SelectField';
 export * from './SelectMenu';
 export * from './Spinner';
 export * from './Text';

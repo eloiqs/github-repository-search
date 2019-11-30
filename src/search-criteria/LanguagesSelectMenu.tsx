@@ -4,7 +4,7 @@ import { createSearchCriteria } from './search-criteria';
 import { useLanguages } from './use-languages';
 import { useSearchCriteria } from './use-search-criteria';
 
-export function Languages() {
+export function LanguagesSelectMenu() {
   const [searchCriteria, setSearchCriteria] = useSearchCriteria();
   const { languages } = useLanguages();
   const [selectedLanguages, setSelectedLanguages] = useState(
