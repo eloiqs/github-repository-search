@@ -27,6 +27,7 @@
     "@types/testing-library__react": "^9.1.2",
     "@types/testing-library__user-event": "^4.1.1",
     "@types/use-persisted-state": "0.3.0",
+    "mockdate": "^2.0.5",
     "typescript": "3.7.2"
   },
   "scripts": {

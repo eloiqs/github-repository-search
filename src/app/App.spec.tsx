@@ -1,12 +1,12 @@
 import Octokit, { SearchReposResponseItemsItem } from '@octokit/rest';
 import '@testing-library/jest-dom/extend-expect';
-import { render, act, fireEvent } from '@testing-library/react';
-import React from 'react';
-import { App } from './App';
-import { toTimeRange } from '../time';
+import { act, fireEvent, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-
-jest.mock('@octokit/rest');
+import { set as setDate } from 'mockdate';
+import React from 'react';
+import { createSearchCriteria } from '../search-criteria';
+import { toTimeRange } from '../time';
+import { App } from './App';
 
 let mockSearchRepos: jest.Mock;
 
@@ -43,10 +43,6 @@ afterEach(() => {
 });
 
 test('searches repos with the default criteria', async () => {
-  jest
-    .spyOn(Date, 'now')
-    .mockImplementation(() => new Date('2019-11-28').valueOf());
-
   const { getByTestId, getByText, queryByText, queryByTestId } = render(
     <App />
   );
@@ -56,7 +52,7 @@ test('searches repos with the default criteria', async () => {
   expect(getByTestId('spinner')).toBeVisible();
   expect(queryByText('Load next year')).toBeNull();
   expect(mockSearchRepos).toBeCalledWith({
-    q: 'created:2018-11-29..2019-11-29',
+    q: 'created:2018-11-27..2019-11-27',
     sort: 'stars'
   });
 
@@ -69,25 +65,16 @@ test('searches repos with the default criteria', async () => {
   expect(queryByTestId('spinner')).toBeNull();
   expect(getByText('Load next year')).toBeVisible();
   expect(getByText('A year ago')).toBeVisible();
-  expect(getByText('November 29, 2018 – November 29, 2019')).toBeVisible();
+  expect(getByText('November 27, 2018 – November 27, 2019')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
 });
 
 test('searches repos with the localStorage criteria', async () => {
-  jest
-    .spyOn(Date, 'now')
-    .mockImplementation(() => new Date('2019-11-28').valueOf());
-
   localStorage.setItem(
     'grs-search-criteria',
-    JSON.stringify({
-      sort: 'stars',
-      languages: ['JavaScript', 'TypeScript'],
-      timeRange: toTimeRange('weekly'),
-      order: 'desc',
-      page: 0,
-      per_page: 20
-    })
+    JSON.stringify(
+      createSearchCriteria(['JavaScript', 'TypeScript'], toTimeRange('weekly'))
+    )
   );
 
   const { getByTestId, getByText, queryByText, queryByTestId } = render(
@@ -129,10 +116,6 @@ test('searches repos with the localStorage criteria', async () => {
 });
 
 test('allows loading the next increment of results', async () => {
-  jest
-    .spyOn(Date, 'now')
-    .mockImplementation(() => new Date('2019-11-28').valueOf());
-
   const { getByTestId, getByText, queryByText, queryByTestId } = render(
     <App />
   );
@@ -173,10 +156,6 @@ test('allows loading the next increment of results', async () => {
 });
 
 test('searches repos when the language changes', async () => {
-  jest
-    .spyOn(Date, 'now')
-    .mockImplementation(() => new Date('2019-11-28').valueOf());
-
   localStorage.setItem(
     'grs-languages',
     JSON.stringify(['JavaScript', 'TypeScript'])
@@ -188,7 +167,6 @@ test('searches repos when the language changes', async () => {
     queryByText,
     getByPlaceholderText,
     getByRole,
-    queryByRole,
     queryByTestId
   } = render(<App />);
 
@@ -228,7 +206,7 @@ test('searches repos when the language changes', async () => {
   expect(queryByText('Load next year')).toBeNull();
   expect(queryByText('2 years ago')).toBeNull();
   expect(mockSearchRepos).toBeCalledWith({
-    q: 'language:TypeScript+created:2018-11-29..2019-11-29',
+    q: 'language:TypeScript+created:2018-11-27..2019-11-27',
     sort: 'stars'
   });
 
@@ -241,21 +219,16 @@ test('searches repos when the language changes', async () => {
   expect(queryByTestId('spinner')).toBeNull();
   expect(getByText('Load next year')).toBeVisible();
   expect(getByText('A year ago')).toBeVisible();
-  expect(getByText('November 29, 2018 – November 29, 2019')).toBeVisible();
+  expect(getByText('November 27, 2018 – November 27, 2019')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
 });
 
 test('searches repos when the time increment changes', async () => {
-  jest
-    .spyOn(Date, 'now')
-    .mockImplementation(() => new Date('2019-11-28').valueOf());
-
   const {
     getByText,
     getByTestId,
     queryByText,
     getByRole,
-    queryByRole,
     queryByTestId
   } = render(<App />);
 
@@ -304,5 +277,52 @@ test('searches repos when the time increment changes', async () => {
   expect(getByText('Load next week')).toBeVisible();
   expect(getByText('8 days ago')).toBeVisible();
   expect(getByText('November 20, 2019 – November 27, 2019')).toBeVisible();
+  expect(getByText('some repo')).toBeVisible();
+});
+
+test('allows refreshing the search with an updated time range', async () => {
+  const { getByText, getByTestId, queryByText, queryByTestId } = render(
+    <App />
+  );
+
+  await act(async () => {
+    mockResolveRepos(
+      createSearchReposResponse([{ html_url: 'repo_url', name: 'some repo' }])
+    );
+  });
+
+  expect(getByText('some repo')).toBeVisible();
+  fireEvent.click(getByText('Load next year'));
+
+  await act(async () => {
+    mockResolveRepos(
+      createSearchReposResponse([
+        { html_url: 'other_repo_url', name: 'some other repo' }
+      ])
+    );
+  });
+
+  expect(getByText('some other repo')).toBeVisible();
+  setDate('2019-11-29');
+  fireEvent.click(getByTestId('refresh'));
+
+  expect(getByTestId('spinner')).toBeVisible();
+  expect(queryByText('Load next year')).toBeNull();
+  expect(queryByText('2 years ago')).toBeNull();
+  expect(mockSearchRepos).toBeCalledWith({
+    q: 'created:2018-11-28..2019-11-28',
+    sort: 'stars'
+  });
+
+  await act(async () => {
+    mockResolveRepos(
+      createSearchReposResponse([{ html_url: 'repo_url', name: 'some repo' }])
+    );
+  });
+
+  expect(queryByTestId('spinner')).toBeNull();
+  expect(getByText('Load next year')).toBeVisible();
+  expect(getByText('A year ago')).toBeVisible();
+  expect(getByText('November 28, 2018 – November 28, 2019')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
 });

@@ -1,21 +1,15 @@
 import React, { useEffect } from 'react';
 import { usePersonalAccessToken } from '../personal-access-token';
 import { Repo } from '../repo';
-import { CreatedAt, Languages, useSearchCriteria } from '../search-criteria';
-import {
-  fromNow,
-  prettyFormat,
-  TimeRange,
-  toTimeRange,
-  toTimeRangeRecurense
-} from '../time';
-import { Button, Column, Heading, Row, Spinner, Text } from '../ui';
+import { Languages, TimeRanges, useSearchCriteria } from '../search-criteria';
+import { createTimeRange, fromNow, prettyFormat, TimeRange } from '../time';
+import { Button, Column, Heading, IconButton, Row, Spinner, Text } from '../ui';
 import { SearchQuery as Query } from './search-query';
 import { useInfiniteSearch } from './use-infinite-search';
 
 export function InfiniteSearch() {
   const [personalAccessToken] = usePersonalAccessToken('');
-  const [searchCriteria] = useSearchCriteria();
+  const [searchCriteria, , refreshTimeRange] = useSearchCriteria();
   const [search, load, loadNext] = useInfiniteSearch(
     searchCriteria,
     personalAccessToken
@@ -26,16 +20,16 @@ export function InfiniteSearch() {
   }, [load]);
 
   function onLoadNext() {
-    const { increments } = searchCriteria.timeRange;
-    const recurense = toTimeRangeRecurense(increments);
-    const timeRange = toTimeRange(recurense, search.queries.length);
-
+    const timeRange = createTimeRange(
+      searchCriteria.timeRange.increments,
+      search.queries.length
+    );
     loadNext(timeRange);
   }
 
   return (
     <>
-      <SearchHeader />
+      <SearchHeader refresh={refreshTimeRange} />
       {search.loading ? (
         <Row justifyContent="center">
           <Spinner size={40} data-testid="spinner" />
@@ -58,19 +52,22 @@ export function InfiniteSearch() {
   );
 }
 
-function SearchHeader() {
+function SearchHeader({ refresh }: { refresh(): void }) {
   return (
     <Row
       paddingX={16}
       alignItems="center"
-      justifyContent="flex-end"
       marginBottom={32}
+      justifyContent="flex-end"
     >
       <Column marginRight={16}>
         <Languages />
       </Column>
+      <Column marginRight={16}>
+        <TimeRanges />
+      </Column>
       <Column>
-        <CreatedAt />
+        <IconButton icon="refresh" onClick={refresh} data-testid="refresh" />
       </Column>
     </Row>
   );

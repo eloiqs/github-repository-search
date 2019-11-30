@@ -1,4 +1,4 @@
-export * from './CreatedAt';
+export * from './TimeRanges';
 export * from './Languages';
 export * from './search-criteria';
 export * from './to-query-string';

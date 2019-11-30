@@ -66,6 +66,14 @@ export function toTimeRange(
   };
 }
 
+export function createTimeRange(
+  increments: TimeRangeIncrements,
+  timeRangeOffset = 0
+) {
+  const recurense = toTimeRangeRecurense(increments);
+  return toTimeRange(recurense, timeRangeOffset);
+}
+
 export function fromNow(timeRange: TimeRange) {
   return capitalize(moment(timeRange.from).fromNow());
 }
