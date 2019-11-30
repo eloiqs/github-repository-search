@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button, SelectMenu, SelectMenuItem } from '../ui';
+import { createSearchCriteria } from './search-criteria';
 import { useLanguages } from './use-languages';
 import { useSearchCriteria } from './use-search-criteria';
 
@@ -13,10 +14,9 @@ export function Languages() {
   function onSelect(item: SelectMenuItem) {
     const selected = [...selectedLanguages, item.value] as string[];
     setSelectedLanguages(selected);
-    setSearchCriteria(criteria => ({
-      ...criteria,
-      languages: selected
-    }));
+    setSearchCriteria(criteria =>
+      createSearchCriteria(selected, criteria.timeRange)
+    );
   }
 
   function onDeselect(deselectedItem: SelectMenuItem) {
@@ -24,10 +24,9 @@ export function Languages() {
       language => language !== deselectedItem.value
     );
     setSelectedLanguages(languages);
-    setSearchCriteria(criteria => ({
-      ...criteria,
-      languages
-    }));
+    setSearchCriteria(criteria =>
+      createSearchCriteria(languages, criteria.timeRange)
+    );
   }
 
   const label = selectedLanguages.length
@@ -39,7 +38,6 @@ export function Languages() {
   return (
     <SelectMenu
       isMultiSelect
-      closeOnSelect
       title="Filter languages"
       options={options}
       selected={selectedLanguages}

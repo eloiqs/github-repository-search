@@ -53,12 +53,10 @@ test('searches repos with the default criteria', async () => {
 
   expect(getByText('Filter languages')).toBeVisible();
   expect(getByText('Yearly')).toBeVisible();
-  expect(getByText('A year ago')).toBeVisible();
-  expect(getByText('November 27, 2018 – November 27, 2019')).toBeVisible();
   expect(getByTestId('spinner')).toBeVisible();
   expect(queryByText('Load next year')).toBeNull();
   expect(mockSearchRepos).toBeCalledWith({
-    q: 'created:2018-11-27..2019-11-27',
+    q: 'created:2018-11-29..2019-11-29',
     sort: 'stars'
   });
 
@@ -70,6 +68,8 @@ test('searches repos with the default criteria', async () => {
 
   expect(queryByTestId('spinner')).toBeNull();
   expect(getByText('Load next year')).toBeVisible();
+  expect(getByText('A year ago')).toBeVisible();
+  expect(getByText('November 29, 2018 – November 29, 2019')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
 });
 
@@ -96,8 +96,6 @@ test('searches repos with the localStorage criteria', async () => {
 
   expect(getByText('JavaScript, TypeScript')).toBeVisible();
   expect(getByText('Weekly')).toBeVisible();
-  expect(getByText('8 days ago')).toBeVisible();
-  expect(getByText('November 20, 2019 – November 27, 2019')).toBeVisible();
   expect(getByTestId('spinner')).toBeVisible();
   expect(queryByText('Load next week')).toBeNull();
   expect(mockSearchRepos).toBeCalledWith({
@@ -125,6 +123,8 @@ test('searches repos with the localStorage criteria', async () => {
 
   expect(queryByTestId('spinner'));
   expect(getByText('Load next week')).toBeVisible();
+  expect(getByText('8 days ago')).toBeVisible();
+  expect(getByText('November 20, 2019 – November 27, 2019')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
 });
 
@@ -150,8 +150,7 @@ test('allows loading the next increment of results', async () => {
   fireEvent.click(loadNext);
 
   expect(getByTestId('spinner')).toBeVisible();
-  expect(getByText('2 years ago')).toBeVisible();
-  expect(getByText('November 27, 2017 – November 27, 2018')).toBeVisible();
+  expect(getByText('some repo')).toBeVisible();
   expect(queryByText('Load next year')).toBeNull();
   expect(mockSearchRepos).toBeCalledWith({
     q: 'created:2017-11-27..2018-11-27',
@@ -168,6 +167,8 @@ test('allows loading the next increment of results', async () => {
 
   expect(queryByTestId('spinner')).toBeNull();
   expect(getByText('Load next year')).toBeVisible();
+  expect(getByText('2 years ago')).toBeVisible();
+  expect(getByText('November 27, 2017 – November 27, 2018')).toBeVisible();
   expect(getByText('some other repo')).toBeVisible();
 });
 
@@ -223,16 +224,11 @@ test('searches repos when the language changes', async () => {
 
   fireEvent.click(getByText('TypeScript'));
 
-  expect(queryByRole('dialog')).toBeNull();
-  expect(getByText('TypeScript')).toBeVisible();
-  expect(getByText('Yearly')).toBeVisible();
-  expect(getByText('A year ago')).toBeVisible();
-  expect(getByText('November 27, 2018 – November 27, 2019')).toBeVisible();
   expect(getByTestId('spinner')).toBeVisible();
   expect(queryByText('Load next year')).toBeNull();
   expect(queryByText('2 years ago')).toBeNull();
   expect(mockSearchRepos).toBeCalledWith({
-    q: 'language:TypeScript+created:2018-11-27..2019-11-27',
+    q: 'language:TypeScript+created:2018-11-29..2019-11-29',
     sort: 'stars'
   });
 
@@ -244,6 +240,8 @@ test('searches repos when the language changes', async () => {
 
   expect(queryByTestId('spinner')).toBeNull();
   expect(getByText('Load next year')).toBeVisible();
+  expect(getByText('A year ago')).toBeVisible();
+  expect(getByText('November 29, 2018 – November 29, 2019')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
 });
 
@@ -288,10 +286,6 @@ test('searches repos when the time increment changes', async () => {
 
   fireEvent.click(getByText('Weekly'));
 
-  expect(queryByRole('menu')).toBeNull();
-  expect(getByText('Weekly')).toBeVisible();
-  expect(getByText('8 days ago')).toBeVisible();
-  expect(getByText('November 20, 2019 – November 27, 2019')).toBeVisible();
   expect(getByTestId('spinner')).toBeVisible();
   expect(queryByText('Load next week')).toBeNull();
   expect(queryByText('2 years ago')).toBeNull();
@@ -308,5 +302,7 @@ test('searches repos when the time increment changes', async () => {
 
   expect(queryByTestId('spinner')).toBeNull();
   expect(getByText('Load next week')).toBeVisible();
+  expect(getByText('8 days ago')).toBeVisible();
+  expect(getByText('November 20, 2019 – November 27, 2019')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { PersonalAccessToken } from '../personal-access-token';
-import { ExpandableSearch } from '../search';
+import { InfiniteSearch } from '../search';
 import { Column, defaultTheme, Heading, Link, Row, Text } from '../ui';
 
 export function App() {
@@ -42,7 +42,7 @@ export function App() {
           </Row>
           <Row>
             <Column width={1032} margin="auto">
-              <ExpandableSearch />
+              <InfiniteSearch />
             </Column>
           </Row>
         </Column>

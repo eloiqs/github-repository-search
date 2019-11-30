@@ -1,20 +1,7 @@
-import { SearchReposParams } from '@octokit/rest';
 import createPersistedState from 'use-persisted-state';
-import { TimeRange, toTimeRange } from '../time';
+import { createSearchCriteria } from './search-criteria';
 
-export type SearchCriteria = Omit<SearchReposParams, 'q'> & {
-  languages: string[];
-  timeRange: TimeRange;
-};
-
-export const initialState: SearchCriteria = {
-  sort: 'stars',
-  languages: [],
-  timeRange: toTimeRange('yearly'),
-  order: 'desc',
-  page: 0,
-  per_page: 20
-};
+export const initialState = createSearchCriteria();
 
 const usePersistedSearchCriteria = createPersistedState('grs-search-criteria');
 

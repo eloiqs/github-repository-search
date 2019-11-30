@@ -1,2 +1,1 @@
-export * from './ExpandableSearch';
-export * from './Search';
+export * from './InfiniteSearch';

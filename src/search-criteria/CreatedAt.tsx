@@ -3,6 +3,7 @@ import { capitalize } from '../capitalize';
 import { TimeRangeRecurense, toTimeRange, toTimeRangeRecurense } from '../time';
 import { Button, Menu, Popover } from '../ui';
 import { useSearchCriteria } from './use-search-criteria';
+import { createSearchCriteria } from './search-criteria';
 
 export function CreatedAt() {
   const [searchCriteria, setSearchCriteria] = useSearchCriteria();
@@ -13,10 +14,12 @@ export function CreatedAt() {
   function onSelect(timeRangeRecurense: TimeRangeRecurense, close: () => void) {
     return function() {
       setTimeRangeRecurense(timeRangeRecurense);
-      setSearchCriteria(criteria => ({
-        ...criteria,
-        timeRange: toTimeRange(timeRangeRecurense)
-      }));
+      setSearchCriteria(criteria =>
+        createSearchCriteria(
+          criteria.languages,
+          toTimeRange(timeRangeRecurense)
+        )
+      );
       close();
     };
   }
