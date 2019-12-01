@@ -4,9 +4,11 @@ import '@testing-library/jest-dom/extend-expect';
 import { act, fireEvent, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { set as setDate } from 'mockdate';
+import moment from 'moment';
 import React from 'react';
+import * as api from '../api';
 import { TrendingRepo } from '../api/trending-repos';
-import { createSearchCriteria } from '../search-criteria';
+import { createSearchCriteria, Language } from '../search-criteria';
 import { toTimeRange } from '../time';
 import { App } from './App';
 
@@ -45,6 +47,18 @@ jest.mock('@huchenme/github-trending', () => ({
     () =>
       new Promise(resolve => {
         mockTrendingReposResolve.push(resolve);
+      })
+  )
+}));
+
+const fetchLanguages = api.fetchLanguages as jest.Mock;
+let mockFetchLanguagesResolve: (languages: Partial<Language>[]) => void;
+
+jest.mock('../api/fetch-languages', () => ({
+  fetchLanguages: jest.fn(
+    () =>
+      new Promise(resolve => {
+        mockFetchLanguagesResolve = resolve;
       })
   )
 }));
@@ -174,7 +188,9 @@ test('allows loading the next increment of results', async () => {
 test('searches repos when the language changes', async () => {
   localStorage.setItem(
     'grs-languages',
-    JSON.stringify(['JavaScript', 'TypeScript'])
+    JSON.stringify({
+      languages: [{ name: 'JavaScript' }, { name: 'TypeScript' }]
+    })
   );
 
   const {
@@ -358,7 +374,9 @@ test('allows refreshing the search with an updated time range', async () => {
 test('allows searching for trending repos', async () => {
   localStorage.setItem(
     'grs-languages',
-    JSON.stringify(['JavaScript', 'TypeScript'])
+    JSON.stringify({
+      languages: [{ name: 'JavaScript' }, { name: 'TypeScript' }]
+    })
   );
   localStorage.setItem(
     'grs-search-criteria',
@@ -405,4 +423,50 @@ test('allows searching for trending repos', async () => {
   expect(getByText('some repo')).toBeVisible();
   expect(getByText('some other repo')).toBeVisible();
   expect(queryByText('Load next day')).toBeNull();
+});
+
+test('gets the latest languages data from github once per day', async () => {
+  fetchLanguages.mockClear();
+
+  setDate('2019-12-01');
+  localStorage.setItem(
+    'grs-languages',
+    JSON.stringify({
+      timestamp: moment().format(),
+      languages: [{ name: 'JavaScript' }]
+    })
+  );
+
+  const queries = render(<App />);
+
+  expect(fetchLanguages).not.toBeCalled();
+
+  setDate('2019-11-30');
+  localStorage.setItem(
+    'grs-languages',
+    JSON.stringify({
+      timestamp: moment().format(),
+      languages: [{ name: 'JavaScript' }]
+    })
+  );
+
+  setDate('2019-12-01');
+  queries.unmount();
+  queries.rerender(<App />);
+
+  expect(fetchLanguages).toBeCalledWith();
+
+  fireEvent.click(queries.getByText('Filter languages'));
+
+  expect(queries.getByRole('dialog')).toBeVisible();
+  expect(queries.getByText('JavaScript')).toBeVisible();
+  expect(queries.queryByText('TypeScript')).toBeNull();
+
+  await act(async () => {
+    mockFetchLanguagesResolve([{ name: 'JavaScript' }, { name: 'TypeScript' }]);
+  });
+
+  expect(queries.getByRole('dialog')).toBeVisible();
+  expect(queries.getByText('JavaScript')).toBeVisible();
+  expect(queries.getByText('TypeScript')).toBeVisible();
 });

@@ -6,7 +6,7 @@ import { useSearchCriteria } from './use-search-criteria';
 
 export function LanguagesSelectMenu() {
   const [searchCriteria, setSearchCriteria] = useSearchCriteria();
-  const { languages } = useLanguages();
+  const [languages] = useLanguages();
   const [selectedLanguages, setSelectedLanguages] = useState(
     searchCriteria.languages
   );
@@ -33,7 +33,7 @@ export function LanguagesSelectMenu() {
     ? selectedLanguages.join(', ')
     : 'Filter languages';
 
-  const options = languages.map(lang => ({ label: lang, value: lang }));
+  const options = languages.map(({ name }) => ({ label: name, value: name }));
 
   return (
     <SelectMenu

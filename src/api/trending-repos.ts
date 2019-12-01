@@ -2,6 +2,7 @@ import { fetchRepositories } from '@huchenme/github-trending';
 import { Repo } from '../repo';
 import { SearchCriteria } from '../search-criteria';
 import { toTimeRangeRecurense } from '../time';
+import { flatZip } from '../utils';
 
 export async function fetchTrendingRepos(
   searchCriteria: SearchCriteria
@@ -58,15 +59,4 @@ function createRepo(trendingRepo: TrendingRepo): Repo {
     currentPeriodStars: trendingRepo.currentPeriodStars,
     forks: trendingRepo.forks
   };
-}
-
-function flatZip<T extends any>(arrs: T[][]): T[] {
-  const [arr, ...rest] = arrs;
-  return arr.reduce<T[]>(
-    (flatArr, val, i) => [
-      ...flatArr,
-      ...rest.reduce((a, arr) => (arr[i] ? [...a, arr[i]] : a), [val])
-    ],
-    []
-  );
 }

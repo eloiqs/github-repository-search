@@ -1,5 +1,5 @@
 import moment from 'moment';
-import { capitalize } from '../capitalize';
+import { capitalize } from '../utils';
 
 export type TimeRangeIncrements = 'year' | 'month' | 'week' | 'day';
 
