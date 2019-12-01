@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { RepoCard } from '../repo';
+import ContentLoader from 'react-content-loader';
+import { RepoCard, RepoCardContent, RepoCardLoader } from '../repo';
 import {
   LanguagesSelectMenu,
   TimeRangesPopoverMenu,
@@ -7,7 +8,17 @@ import {
 } from '../search-criteria';
 import { SearchTypesSelectField, useSearchType } from '../search-type';
 import { createTimeRange, fromNow, prettyFormat, TimeRange } from '../time';
-import { Button, Column, Heading, IconButton, Row, Spinner, Text } from '../ui';
+import {
+  Button,
+  Column,
+  defaultTheme,
+  Heading,
+  IconButton,
+  Pane,
+  Row,
+  RowProps,
+  Text
+} from '../ui';
 import { SearchQuery as Query } from './search-query';
 import { useInfiniteSearch } from './use-infinite-search';
 
@@ -32,9 +43,7 @@ export function InfiniteSearch() {
     <>
       <SearchHeader refresh={refreshTimeRange} />
       {search.loading ? (
-        <Row justifyContent="center">
-          <Spinner size={40} data-testid="spinner" />
-        </Row>
+        <SearchQueryLoader />
       ) : (
         <>
           {search.queries.map(query => (
@@ -73,39 +82,80 @@ function SearchHeader({ refresh }: { refresh(): void }) {
   );
 }
 
-function SearchQuery({ query }: { query: Query }) {
+function SearchQueryLoader() {
   return (
-    <Row flexWrap="wrap" justifyContent="center">
-      {query.loading ? (
-        <Spinner size={40} data-testid="spinner" marginBottom={32} />
-      ) : (
-        <>
-          <SearchQueryHeader timeRange={query.timeRange} />
-          {(query.results || []).map(repo => (
-            <RepoCard
-              key={repo.url}
-              repo={repo}
-              timeRange={query.timeRange}
-              marginX={16}
-            />
-          ))}
-        </>
-      )}
+    <>
+      <SearchQueryHeader>
+        <SearchQueryHeaderLoader />
+      </SearchQueryHeader>
+      <Row
+        data-testid="query-repos-loader"
+        flexWrap="wrap"
+        justifyContent="center"
+      >
+        {Array.from(Array(12)).map((_, index) => (
+          <RepoCard key={index} marginX={16}>
+            <RepoCardLoader />
+          </RepoCard>
+        ))}
+      </Row>
+    </>
+  );
+}
+
+function SearchQuery({ query }: { query: Query }) {
+  return query.loading ? (
+    <SearchQueryLoader />
+  ) : (
+    <>
+      <SearchQueryHeader>
+        <SearchQueryHeaderContent timeRange={query.timeRange} />
+      </SearchQueryHeader>
+      <Row flexWrap="wrap" justifyContent="center">
+        {(query.results || []).map(repo => (
+          <RepoCard key={repo.url} marginX={16}>
+            <RepoCardContent repo={repo} timeRange={query.timeRange} />
+          </RepoCard>
+        ))}
+      </Row>
+    </>
+  );
+}
+
+function SearchQueryHeader({ children, ...props }: RowProps) {
+  return (
+    <Row paddingX={16} alignItems="center" marginBottom={32} {...props}>
+      {children}
     </Row>
   );
 }
 
-function SearchQueryHeader({ timeRange }: { timeRange: TimeRange }) {
+function SearchQueryHeaderContent({ timeRange }: { timeRange: TimeRange }) {
   return (
-    <Row paddingX={16} alignItems="center" marginBottom={32}>
-      <Column grow>
-        <Row>
-          <Heading size={600}>{fromNow(timeRange)}</Heading>
-        </Row>
-        <Row>
-          <Text>{prettyFormat(timeRange)}</Text>
-        </Row>
-      </Column>
-    </Row>
+    <Column grow>
+      <Row>
+        <Heading size={600}>{fromNow(timeRange)}</Heading>
+      </Row>
+      <Row>
+        <Text>{prettyFormat(timeRange)}</Text>
+      </Row>
+    </Column>
+  );
+}
+
+function SearchQueryHeaderLoader() {
+  return (
+    <Pane data-testid="query-header-loader" width={264} height={44}>
+      <ContentLoader
+        height={44}
+        width={264}
+        speed={1}
+        primaryColor="#e8eaef"
+        secondaryColor={defaultTheme.colors.background.tint2}
+      >
+        <rect x="0" y="0" rx="4" ry="4" width="100" height="22" />
+        <rect x="0" y="26" rx="4" ry="4" width="264" height="18" />
+      </ContentLoader>
+    </Pane>
   );
 }

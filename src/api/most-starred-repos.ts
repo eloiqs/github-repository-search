@@ -25,6 +25,7 @@ export async function fetchMostStarredRepos(
     description: item.description,
     language: item.language,
     stars: item.stargazers_count,
-    forks: item.forks_count
+    forks: item.forks_count,
+    issues: item.open_issues_count
   }));
 }

@@ -1,2 +1,2 @@
-export * from './RepoCard';
 export * from './repo';
+export * from './RepoCard';
