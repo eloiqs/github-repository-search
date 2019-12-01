@@ -3,6 +3,7 @@ export * from './Card';
 export * from './Column';
 export * from './default-theme';
 export * from './FadeText';
+export * from './GithubIcon';
 export * from './Heading';
 export * from './Icon';
 export * from './IconButton';

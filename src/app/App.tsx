@@ -1,7 +1,15 @@
 import React from 'react';
 import { PersonalAccessToken } from '../personal-access-token';
 import { InfiniteSearch } from '../search';
-import { Column, defaultTheme, Heading, Link, Row, Text } from '../ui';
+import {
+  Button,
+  Column,
+  defaultTheme,
+  GithubIcon,
+  Heading,
+  Row,
+  Text
+} from '../ui';
 
 export function App() {
   return (
@@ -13,21 +21,29 @@ export function App() {
         minHeight={64}
         alignItems="center"
       >
-        <Column paddingRight={16}>
+        <Column paddingRight={16} grow>
           <Heading size={700} color="white">
             Gihtub Repository Search
           </Heading>
         </Column>
         <Column>
-          <Link href="https://kamranahmed.info/githunt/" textDecoration="none">
-            <Text size={500} color="white">
-              – A shameless{' '}
-              <Text textDecoration="underline" color="white">
-                Githunt
-              </Text>{' '}
-              clone
-            </Text>
-          </Link>
+          <Button
+            is="a"
+            href="https://github.com/eloiqs/github-repository-search"
+            target="_blank"
+            appearance="minimal"
+            iconBefore={
+              (
+                <GithubIcon
+                  color="white"
+                  width="16px"
+                  style={{ marginRight: 8, marginLeft: -3 }}
+                />
+              ) as any
+            }
+          >
+            <Text color="white">Github</Text>
+          </Button>
         </Column>
       </Row>
       <Row>
