@@ -32,11 +32,14 @@ export function useLanguages() {
         const languages = await fetchLanguages();
 
         if (isMounted()) {
+          const timestamp = moment().format();
           if (
             JSON.stringify(languages) !== JSON.stringify(persistedLanguages)
           ) {
-            setPersistedLanguages({ languages, timestamp: moment().format() });
+            setPersistedLanguages({ languages, timestamp });
           }
+          // still need to update timestamp if languages did not change
+          setPersistedLanguages(state => ({ ...state, timestamp }));
           setIsLoading(false);
         }
       })();
