@@ -42,7 +42,7 @@ export function App() {
               ) as any
             }
           >
-            <Text color="white">Github</Text>
+            <Text color="white">View Source</Text>
           </Button>
         </Column>
       </Row>
