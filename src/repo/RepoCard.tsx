@@ -197,6 +197,7 @@ export function RepoCardLoader() {
       speed={1}
       primaryColor="#e8eaef"
       secondaryColor={defaultTheme.colors.background.tint2}
+      ariaLabel="Repo loading..."
     >
       <rect x="40" y="4" rx="4" ry="4" width="140" height="12" />
       <rect x="40" y="24" rx="4" ry="4" width="120" height="10" />

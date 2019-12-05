@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import ContentLoader from 'react-content-loader';
 import { RepoCard, RepoCardContent, RepoCardLoader } from '../repo';
 import {
@@ -7,9 +7,8 @@ import {
   useSearchCriteria
 } from '../search-criteria';
 import { SearchTypesSelectField, useSearchType } from '../search-type';
-import { createTimeRange, fromNow, prettyFormat, TimeRange } from '../time';
+import { fromNow, prettyFormat, TimeRange } from '../time';
 import {
-  Button,
   Column,
   defaultTheme,
   Heading,
@@ -24,26 +23,14 @@ import { useInfiniteSearch } from './use-infinite-search';
 
 export function InfiniteSearch() {
   const [searchType] = useSearchType();
-  const [searchCriteria, , refreshTimeRange] = useSearchCriteria();
-  const [search, load, loadNext] = useInfiniteSearch();
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  function onLoadNext() {
-    const timeRange = createTimeRange(
-      searchCriteria.timeRange.increments,
-      search.queries.length
-    );
-    loadNext(timeRange);
-  }
+  const [, , refreshTimeRange] = useSearchCriteria();
+  const [search] = useInfiniteSearch(searchType === 'most-starred');
 
   return (
-    <>
+    <Column width={1032} margin="auto">
       <SearchHeader refresh={refreshTimeRange} />
       {search.loading ? (
-        <SearchQueryLoader />
+        <SearchQueryLoader repoCount={12} />
       ) : (
         <>
           {search.queries.map(query => (
@@ -51,15 +38,11 @@ export function InfiniteSearch() {
           ))}
           {searchType === 'most-starred' &&
             search.queries.every(query => !query.loading) && (
-              <Row paddingBottom={32} justifyContent="center">
-                <Button onClick={onLoadNext}>
-                  Load next {searchCriteria.timeRange.increments}
-                </Button>
-              </Row>
+              <SearchQueryLoader repoCount={3} />
             )}
         </>
       )}
-    </>
+    </Column>
   );
 }
 
@@ -76,24 +59,20 @@ function SearchHeader({ refresh }: { refresh(): void }) {
         <TimeRangesPopoverMenu />
       </Column>
       <Column>
-        <IconButton icon="refresh" onClick={refresh} data-testid="refresh" />
+        <IconButton icon="refresh" onClick={refresh} aria-label="refresh" />
       </Column>
     </Row>
   );
 }
 
-function SearchQueryLoader() {
+function SearchQueryLoader({ repoCount }: { repoCount: number }) {
   return (
     <>
       <SearchQueryHeader>
         <SearchQueryHeaderLoader />
       </SearchQueryHeader>
-      <Row
-        data-testid="query-repos-loader"
-        flexWrap="wrap"
-        justifyContent="center"
-      >
-        {Array.from(Array(12)).map((_, index) => (
+      <Row flexWrap="wrap" justifyContent="center">
+        {Array.from(Array(repoCount)).map((_, index) => (
           <RepoCard key={index} marginX={16}>
             <RepoCardLoader />
           </RepoCard>
@@ -105,7 +84,7 @@ function SearchQueryLoader() {
 
 function SearchQuery({ query }: { query: Query }) {
   return query.loading ? (
-    <SearchQueryLoader />
+    <SearchQueryLoader repoCount={12} />
   ) : (
     <>
       <SearchQueryHeader>
@@ -145,13 +124,14 @@ function SearchQueryHeaderContent({ timeRange }: { timeRange: TimeRange }) {
 
 function SearchQueryHeaderLoader() {
   return (
-    <Pane data-testid="query-header-loader" width={264} height={44}>
+    <Pane width={264} height={44}>
       <ContentLoader
         height={44}
         width={264}
         speed={1}
         primaryColor="#e8eaef"
         secondaryColor={defaultTheme.colors.background.tint2}
+        ariaLabel="Search query header loading..."
       >
         <rect x="0" y="0" rx="4" ry="4" width="100" height="22" />
         <rect x="0" y="26" rx="4" ry="4" width="264" height="18" />

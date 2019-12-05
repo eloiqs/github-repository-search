@@ -57,9 +57,7 @@ export function App() {
             <PersonalAccessToken />
           </Row>
           <Row>
-            <Column width={1032} margin="auto">
-              <InfiniteSearch />
-            </Column>
+            <InfiniteSearch />
           </Row>
         </Column>
       </Row>

@@ -9,6 +9,8 @@ import React from 'react';
 import * as api from '../api';
 import { TrendingRepo } from '../api/trending-repos';
 import { createSearchCriteria, Language } from '../search-criteria';
+import { mockRaf } from '../test-utils/mock-raf';
+import { setupScrollMock } from '../test-utils/mock-scroll';
 import { toTimeRange } from '../time';
 import { App } from './App';
 
@@ -40,7 +42,7 @@ function createMostStarredReposResponse(
 }
 
 let mockTrendingReposResolve: ((response: TrendingRepo[]) => void)[] = [];
-const mockTrendingReposRequest: jest.Mock = fetchRepositories;
+const mockTrendingReposRequest: jest.Mocked<typeof fetchRepositories> = fetchRepositories;
 
 jest.mock('@huchenme/github-trending', () => ({
   fetchRepositories: jest.fn(
@@ -63,20 +65,14 @@ jest.mock('../api/fetch-languages', () => ({
   )
 }));
 
-afterEach(() => {
-  localStorage.clear();
-});
-
 test('searches repos with the default criteria', async () => {
-  const { getByTestId, getByText, queryByText, queryByTestId } = render(
-    <App />
-  );
+  const { cleanup } = setupScrollMock({ height: 3000 });
+
+  const { getByText, getAllByLabelText } = render(<App />);
 
   expect(getByText('Filter languages')).toBeVisible();
   expect(getByText('Yearly')).toBeVisible();
-  expect(getByTestId('query-header-loader')).toBeVisible();
-  expect(getByTestId('query-repos-loader')).toBeVisible();
-  expect(queryByText('Load next year')).toBeNull();
+  expect(getAllByLabelText('Repo loading...').length).toBe(12);
   expect(mockMostStarredReposRequest).toBeCalledWith({
     q: 'created:2018-11-27..2019-11-27',
     sort: 'stars'
@@ -90,11 +86,12 @@ test('searches repos with the default criteria', async () => {
     );
   });
 
-  expect(queryByTestId('query-header-loader')).toBeNull();
-  expect(getByText('Load next year')).toBeVisible();
+  expect(getAllByLabelText('Repo loading...').length).toBe(3);
   expect(getByText('A year ago')).toBeVisible();
   expect(getByText('November 27, 2018 – November 27, 2019')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
+
+  cleanup();
 });
 
 test('searches repos with the localStorage criteria', async () => {
@@ -105,15 +102,13 @@ test('searches repos with the localStorage criteria', async () => {
     )
   );
 
-  const { getByTestId, getByText, queryByText, queryByTestId } = render(
-    <App />
-  );
+  const { cleanup } = setupScrollMock({ height: 3000 });
+
+  const { getByText, getAllByLabelText } = render(<App />);
 
   expect(getByText('JavaScript, TypeScript')).toBeVisible();
   expect(getByText('Weekly')).toBeVisible();
-  expect(getByTestId('query-header-loader')).toBeVisible();
-  expect(getByTestId('query-repos-loader')).toBeVisible();
-  expect(queryByText('Load next week')).toBeNull();
+  expect(getAllByLabelText('Repo loading...').length).toBe(12);
   expect(mockMostStarredReposRequest).toBeCalledWith({
     q: 'language:JavaScript+language:TypeScript+created:2019-11-20..2019-11-27',
     sort: 'stars'
@@ -138,17 +133,28 @@ test('searches repos with the localStorage criteria', async () => {
     );
   });
 
-  expect(queryByTestId('query-header-loader'));
-  expect(getByText('Load next week')).toBeVisible();
+  expect(getAllByLabelText('Repo loading...').length).toBe(3);
   expect(getByText('8 days ago')).toBeVisible();
   expect(getByText('November 20, 2019 – November 27, 2019')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
+
+  cleanup();
 });
 
 test('allows loading the next increment of results', async () => {
-  const { getByTestId, getByText, queryByText, queryByTestId } = render(
-    <App />
-  );
+  jest.useFakeTimers();
+
+  const { cleanup: cleanupRafMock } = mockRaf();
+
+  const {
+    scrollTo,
+    updateDocumentDimensions,
+    cleanup: cleanupScrollMock
+  } = setupScrollMock({ height: 3000 });
+
+  const { getByText, getAllByLabelText, queryByText } = render(<App />);
+
+  mockMostStarredReposRequest.mockClear();
 
   await act(async () => {
     mockMostStarredReposResolve(
@@ -158,14 +164,14 @@ test('allows loading the next increment of results', async () => {
     );
   });
 
-  expect(queryByTestId('query-header-loader')).toBeNull();
-  const loadNext = getByText('Load next year');
-  expect(loadNext).toBeVisible();
+  expect(getAllByLabelText('Repo loading...').length).toBe(3);
 
-  fireEvent.click(loadNext);
+  await act(async () => {
+    scrollTo({ y: 3000 });
+    jest.runAllTimers();
+  });
 
-  expect(getByTestId('query-header-loader')).toBeVisible();
-  expect(getByTestId('query-repos-loader')).toBeVisible();
+  expect(getAllByLabelText('Repo loading...').length).toBe(12);
   expect(getByText('some repo')).toBeVisible();
   expect(queryByText('Load next year')).toBeNull();
   expect(mockMostStarredReposRequest).toBeCalledWith({
@@ -174,6 +180,7 @@ test('allows loading the next increment of results', async () => {
   });
 
   await act(async () => {
+    updateDocumentDimensions({ height: 6000 });
     mockMostStarredReposResolve(
       createMostStarredReposResponse([
         { html_url: 'other_repo_url', name: 'some other repo' }
@@ -181,11 +188,15 @@ test('allows loading the next increment of results', async () => {
     );
   });
 
-  expect(queryByTestId('query-header-loader')).toBeNull();
-  expect(getByText('Load next year')).toBeVisible();
+  expect(getAllByLabelText('Repo loading...').length).toBe(3);
   expect(getByText('2 years ago')).toBeVisible();
   expect(getByText('November 27, 2017 – November 27, 2018')).toBeVisible();
   expect(getByText('some other repo')).toBeVisible();
+
+  cleanupScrollMock();
+  cleanupRafMock();
+  jest.runAllTimers();
+  jest.useRealTimers();
 });
 
 test('searches repos when the language changes', async () => {
@@ -196,14 +207,27 @@ test('searches repos when the language changes', async () => {
     })
   );
 
+  jest.useFakeTimers();
+
+  const { cleanup: cleanupRafMock } = mockRaf();
+
+  const {
+    scrollTo,
+    updateDocumentDimensions,
+    cleanup: cleanupScrollMock
+  } = setupScrollMock({
+    height: 3000
+  });
+
   const {
     getByText,
-    getByTestId,
     queryByText,
     getByPlaceholderText,
     getByRole,
-    queryByTestId
+    getAllByLabelText
   } = render(<App />);
+
+  mockMostStarredReposRequest.mockClear();
 
   await act(async () => {
     mockMostStarredReposResolve(
@@ -213,9 +237,15 @@ test('searches repos when the language changes', async () => {
     );
   });
 
-  fireEvent.click(getByText('Load next year'));
+  await act(async () => {
+    scrollTo({ y: 3000 });
+    jest.runAllTimers();
+  });
+
+  expect(mockMostStarredReposRequest).toHaveBeenCalled();
 
   await act(async () => {
+    updateDocumentDimensions({ height: 6000 });
     mockMostStarredReposResolve(
       createMostStarredReposResponse([
         { html_url: 'other_repo_url', name: 'some other repo' }
@@ -223,6 +253,7 @@ test('searches repos when the language changes', async () => {
     );
   });
 
+  expect(getAllByLabelText('Repo loading...').length).toBe(3);
   expect(getByText('2 years ago')).toBeVisible();
 
   fireEvent.click(getByText('Filter languages'));
@@ -239,8 +270,7 @@ test('searches repos when the language changes', async () => {
 
   fireEvent.click(getByText('TypeScript'));
 
-  expect(getByTestId('query-header-loader')).toBeVisible();
-  expect(getByTestId('query-repos-loader')).toBeVisible();
+  expect(getAllByLabelText('Repo loading...').length).toBe(12);
   expect(queryByText('Load next year')).toBeNull();
   expect(queryByText('2 years ago')).toBeNull();
   expect(mockMostStarredReposRequest).toBeCalledWith({
@@ -256,21 +286,33 @@ test('searches repos when the language changes', async () => {
     );
   });
 
-  expect(queryByTestId('query-header-loader')).toBeNull();
-  expect(getByText('Load next year')).toBeVisible();
+  expect(getAllByLabelText('Repo loading...').length).toBe(3);
   expect(getByText('A year ago')).toBeVisible();
   expect(getByText('November 27, 2018 – November 27, 2019')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
+
+  cleanupScrollMock();
+  cleanupRafMock();
+  jest.runAllTimers();
+  jest.useRealTimers();
 });
 
 test('searches repos when the time increment changes', async () => {
+  jest.useFakeTimers();
+
+  const { cleanup: cleanupRafMock } = mockRaf();
+
   const {
-    getByText,
-    getByTestId,
-    queryByText,
-    getByRole,
-    queryByTestId
-  } = render(<App />);
+    scrollTo,
+    updateDocumentDimensions,
+    cleanup: cleanupScrollMock
+  } = setupScrollMock({ height: 3000 });
+
+  const { getAllByLabelText, getByText, getByRole, queryByText } = render(
+    <App />
+  );
+
+  mockMostStarredReposRequest.mockClear();
 
   await act(async () => {
     mockMostStarredReposResolve(
@@ -280,9 +322,15 @@ test('searches repos when the time increment changes', async () => {
     );
   });
 
-  fireEvent.click(getByText('Load next year'));
+  await act(async () => {
+    scrollTo({ y: 3000 });
+    jest.runAllTimers();
+  });
+
+  expect(mockMostStarredReposRequest).toBeCalled();
 
   await act(async () => {
+    updateDocumentDimensions({ height: 6000 });
     mockMostStarredReposResolve(
       createMostStarredReposResponse([
         { html_url: 'other_repo_url', name: 'some other repo' }
@@ -290,6 +338,7 @@ test('searches repos when the time increment changes', async () => {
     );
   });
 
+  expect(getAllByLabelText('Repo loading...').length).toBe(3);
   expect(getByText('2 years ago')).toBeVisible();
 
   fireEvent.click(getByText('Yearly'));
@@ -301,8 +350,7 @@ test('searches repos when the time increment changes', async () => {
 
   fireEvent.click(getByText('Weekly'));
 
-  expect(getByTestId('query-header-loader')).toBeVisible();
-  expect(getByTestId('query-repos-loader')).toBeVisible();
+  expect(getAllByLabelText('Repo loading...').length).toBe(12);
   expect(queryByText('Load next week')).toBeNull();
   expect(queryByText('2 years ago')).toBeNull();
   expect(mockMostStarredReposRequest).toBeCalledWith({
@@ -318,17 +366,33 @@ test('searches repos when the time increment changes', async () => {
     );
   });
 
-  expect(queryByTestId('query-header-loader')).toBeNull();
-  expect(getByText('Load next week')).toBeVisible();
+  expect(getAllByLabelText('Repo loading...').length).toBe(3);
   expect(getByText('8 days ago')).toBeVisible();
   expect(getByText('November 20, 2019 – November 27, 2019')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
+
+  cleanupRafMock();
+  cleanupScrollMock();
+  jest.runAllTimers();
+  jest.useRealTimers();
 });
 
 test('allows refreshing the search with an updated time range', async () => {
-  const { getByText, getByTestId, queryByText, queryByTestId } = render(
+  jest.useFakeTimers();
+
+  const { cleanup: cleanupRafMock } = mockRaf();
+
+  const {
+    scrollTo,
+    updateDocumentDimensions,
+    cleanup: cleanupScrollMock
+  } = setupScrollMock({ height: 3000 });
+
+  const { getByText, getByLabelText, getAllByLabelText, queryByText } = render(
     <App />
   );
+
+  mockMostStarredReposRequest.mockClear();
 
   await act(async () => {
     mockMostStarredReposResolve(
@@ -339,9 +403,16 @@ test('allows refreshing the search with an updated time range', async () => {
   });
 
   expect(getByText('some repo')).toBeVisible();
-  fireEvent.click(getByText('Load next year'));
 
   await act(async () => {
+    scrollTo({ y: 3000 });
+    jest.runAllTimers();
+  });
+
+  expect(mockMostStarredReposRequest).toBeCalled();
+
+  await act(async () => {
+    updateDocumentDimensions({ height: 6000 });
     mockMostStarredReposResolve(
       createMostStarredReposResponse([
         { html_url: 'other_repo_url', name: 'some other repo' }
@@ -350,12 +421,12 @@ test('allows refreshing the search with an updated time range', async () => {
   });
 
   expect(getByText('some other repo')).toBeVisible();
-  setDate('2019-11-29');
-  fireEvent.click(getByTestId('refresh'));
+  expect(getAllByLabelText('Repo loading...').length).toBe(3);
 
-  expect(getByTestId('query-header-loader')).toBeVisible();
-  expect(getByTestId('query-repos-loader')).toBeVisible();
-  expect(queryByText('Load next year')).toBeNull();
+  setDate('2019-11-29');
+  fireEvent.click(getByLabelText('refresh'));
+
+  expect(getAllByLabelText('Repo loading...').length).toBe(12);
   expect(queryByText('2 years ago')).toBeNull();
   expect(mockMostStarredReposRequest).toBeCalledWith({
     q: 'created:2018-11-28..2019-11-28',
@@ -370,20 +441,33 @@ test('allows refreshing the search with an updated time range', async () => {
     );
   });
 
-  expect(queryByTestId('query-header-loader')).toBeNull();
-  expect(getByText('Load next year')).toBeVisible();
+  expect(getAllByLabelText('Repo loading...').length).toBe(3);
   expect(getByText('A year ago')).toBeVisible();
   expect(getByText('November 28, 2018 – November 28, 2019')).toBeVisible();
   expect(getByText('some repo')).toBeVisible();
+
+  cleanupRafMock();
+  cleanupScrollMock();
+  jest.runAllTimers();
+  jest.useRealTimers();
 });
 
 test('allows searching for trending repos', async () => {
+  jest.useFakeTimers();
+
+  const { cleanup: cleanupRafMock } = mockRaf();
+
+  const { scrollTo, cleanup: cleanupScrollMock } = setupScrollMock({
+    height: 3000
+  });
+
   localStorage.setItem(
     'grs-languages',
     JSON.stringify({
       languages: [{ name: 'JavaScript' }, { name: 'TypeScript' }]
     })
   );
+
   localStorage.setItem(
     'grs-search-criteria',
     JSON.stringify(
@@ -391,7 +475,7 @@ test('allows searching for trending repos', async () => {
     )
   );
 
-  const { getByText, queryByText, getByLabelText } = render(<App />);
+  const { getByText, getByLabelText } = render(<App />);
 
   await act(async () => {
     mockMostStarredReposResolve(
@@ -428,7 +512,20 @@ test('allows searching for trending repos', async () => {
 
   expect(getByText('some repo')).toBeVisible();
   expect(getByText('some other repo')).toBeVisible();
-  expect(queryByText('Load next day')).toBeNull();
+
+  mockTrendingReposRequest.mockClear();
+
+  await act(async () => {
+    scrollTo({ y: 3000 });
+    jest.runAllTimers();
+  });
+
+  expect(mockTrendingReposRequest).not.toBeCalled();
+
+  cleanupRafMock();
+  cleanupScrollMock();
+  jest.runAllTimers();
+  jest.useRealTimers();
 });
 
 test('gets the latest languages data from github once per day', async () => {
