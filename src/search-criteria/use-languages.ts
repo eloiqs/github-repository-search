@@ -46,8 +46,5 @@ export function useLanguages() {
     }
   }, [isMounted, persistedLanguages, setPersistedLanguages, timestamp]);
 
-  return [persistedLanguages, isLoading] as [
-    typeof persistedLanguages,
-    typeof isLoading
-  ];
+  return [persistedLanguages, isLoading] as const;
 }

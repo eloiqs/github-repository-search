@@ -11,8 +11,5 @@ export function useSearchType() {
     initialState
   );
 
-  return [persistedSearchType, setPersistedSearchType] as [
-    typeof persistedSearchType,
-    typeof setPersistedSearchType
-  ];
+  return [persistedSearchType, setPersistedSearchType] as const;
 }

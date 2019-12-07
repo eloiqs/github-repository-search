@@ -100,9 +100,5 @@ export function useInfiniteSearch(loadNextOnScroll = true) {
     windowScroll.y
   ]);
 
-  return [search, load, loadNext] as [
-    typeof search,
-    typeof load,
-    typeof loadNext
-  ];
+  return [search, load, loadNext] as const;
 }

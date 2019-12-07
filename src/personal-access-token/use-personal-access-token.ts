@@ -12,8 +12,8 @@ export function usePersonalAccessToken() {
     setPersistedPersonalAccessToken
   ] = usePersistedPersonalAccessToken(initialState);
 
-  return [persistedPersonalAccessToken, setPersistedPersonalAccessToken] as [
-    typeof persistedPersonalAccessToken,
-    typeof setPersistedPersonalAccessToken
-  ];
+  return [
+    persistedPersonalAccessToken,
+    setPersistedPersonalAccessToken
+  ] as const;
 }
