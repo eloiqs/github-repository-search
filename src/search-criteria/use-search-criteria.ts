@@ -21,5 +21,5 @@ export function useSearchCriteria() {
     );
   }, [setSearchCriteria]);
 
-  return [searchCriteria, setSearchCriteria, refreshTimeRange] as const;
+  return { searchCriteria, setSearchCriteria, refreshTimeRange } as const;
 }

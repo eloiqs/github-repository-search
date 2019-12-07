@@ -13,10 +13,10 @@ export function PersonalAccessToken() {
 type PopoverBodyProps = { close(): void };
 
 function PopoverBody({ close }: PopoverBodyProps) {
-  const [
-    persistedPersonalAccessToken,
-    setPersistedPersonalAccessToken
-  ] = usePersonalAccessToken();
+  const {
+    personalAccessToken: persistedPersonalAccessToken,
+    setPersonalAccessToken: setPersistedPersonalAccessToken
+  } = usePersonalAccessToken();
 
   const [personalAccesToken, setPersonalAccessToken] = useState(
     persistedPersonalAccessToken

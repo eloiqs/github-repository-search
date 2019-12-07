@@ -10,9 +10,9 @@ import { createSearchQuery } from './search-query';
 
 export function useInfiniteSearch(loadNextOnScroll = true) {
   const isMounted = useMountedState();
-  const [personalAccessToken] = usePersonalAccessToken();
-  const [searchType] = useSearchType();
-  const [searchCriteria] = useSearchCriteria();
+  const { personalAccessToken } = usePersonalAccessToken();
+  const { searchType } = useSearchType();
+  const { searchCriteria } = useSearchCriteria();
   const [search, setSearch] = useState(createSearch());
 
   const load = useCallback(async () => {
@@ -100,5 +100,5 @@ export function useInfiniteSearch(loadNextOnScroll = true) {
     windowScroll.y
   ]);
 
-  return [search, load, loadNext] as const;
+  return { search, load, loadNext } as const;
 }

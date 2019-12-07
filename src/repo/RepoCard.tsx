@@ -40,7 +40,7 @@ type RepoCardContentProps = {
 };
 
 export function RepoCardContent({ repo, timeRange }: RepoCardContentProps) {
-  const [languages] = useLanguages();
+  const { languages } = useLanguages();
 
   let languageColor: string | undefined;
   if (repo.languageColor) {

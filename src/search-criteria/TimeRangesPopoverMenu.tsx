@@ -7,8 +7,8 @@ import { createSearchCriteria } from './search-criteria';
 import { useSearchCriteria } from './use-search-criteria';
 
 export function TimeRangesPopoverMenu() {
-  const [searchType] = useSearchType();
-  const [searchCriteria, setSearchCriteria] = useSearchCriteria();
+  const { searchType } = useSearchType();
+  const { searchCriteria, setSearchCriteria } = useSearchCriteria();
   const [timeRangeRecurense, setTimeRangeRecurense] = useState(
     toTimeRangeRecurense(searchCriteria.timeRange.increments)
   );

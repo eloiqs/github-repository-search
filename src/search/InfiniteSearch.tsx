@@ -22,9 +22,9 @@ import { SearchQuery as Query } from './search-query';
 import { useInfiniteSearch } from './use-infinite-search';
 
 export function InfiniteSearch() {
-  const [searchType] = useSearchType();
-  const [, , refreshTimeRange] = useSearchCriteria();
-  const [search] = useInfiniteSearch(searchType === 'most-starred');
+  const { searchType } = useSearchType();
+  const { refreshTimeRange } = useSearchCriteria();
+  const { search } = useInfiniteSearch(searchType === 'most-starred');
 
   return (
     <Column width={1032} margin="auto">

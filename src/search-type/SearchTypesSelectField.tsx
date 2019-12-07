@@ -3,7 +3,7 @@ import { SelectField } from '../ui';
 import { SearchTypes, useSearchType } from './use-search-type';
 
 export function SearchTypesSelectField() {
-  const [searchType, setSearchType] = useSearchType();
+  const { searchType, setSearchType } = useSearchType();
 
   return (
     <SelectField
