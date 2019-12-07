@@ -12,27 +12,27 @@ export function useInfiniteSearch(loadNextOnScroll = true) {
   const isMounted = useMountedState();
   const { personalAccessToken } = usePersonalAccessToken();
   const { searchType } = useSearchType();
-  const { searchCriteria } = useSearchCriteria();
+  const { getSearchCriteria } = useSearchCriteria();
   const [search, setSearch] = useState(createSearch());
 
   const load = useCallback(async () => {
-    setSearch(createSearch([createSearchQuery(searchCriteria.timeRange)]));
+    setSearch(createSearch([createSearchQuery(getSearchCriteria().timeRange)]));
 
     const repos = await fetchRepos(
       searchType,
-      searchCriteria,
+      getSearchCriteria(),
       personalAccessToken
     );
 
     if (isMounted()) {
       setSearch(
         createSearch(
-          [createSearchQuery(searchCriteria.timeRange, repos, false)],
+          [createSearchQuery(getSearchCriteria().timeRange, repos, false)],
           false
         )
       );
     }
-  }, [isMounted, personalAccessToken, searchCriteria, searchType]);
+  }, [getSearchCriteria, isMounted, personalAccessToken, searchType]);
 
   useEffect(() => {
     load();
@@ -40,7 +40,7 @@ export function useInfiniteSearch(loadNextOnScroll = true) {
 
   const loadNext = useCallback(async () => {
     const nextTimeRange = createTimeRange(
-      searchCriteria.timeRange.increments,
+      getSearchCriteria().timeRange.increments,
       search.queries.length
     );
 
@@ -51,7 +51,7 @@ export function useInfiniteSearch(loadNextOnScroll = true) {
     });
 
     const nextCriteria = createSearchCriteria(
-      searchCriteria.languages,
+      getSearchCriteria().languages,
       nextTimeRange
     );
 
@@ -71,11 +71,10 @@ export function useInfiniteSearch(loadNextOnScroll = true) {
       });
     }
   }, [
+    getSearchCriteria,
     isMounted,
     personalAccessToken,
     search.queries.length,
-    searchCriteria.languages,
-    searchCriteria.timeRange.increments,
     searchType
   ]);
 

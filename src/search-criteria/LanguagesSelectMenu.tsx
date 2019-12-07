@@ -5,10 +5,10 @@ import { useLanguages } from './use-languages';
 import { useSearchCriteria } from './use-search-criteria';
 
 export function LanguagesSelectMenu() {
-  const { searchCriteria, setSearchCriteria } = useSearchCriteria();
+  const { getSearchCriteria, setSearchCriteria } = useSearchCriteria();
   const { languages } = useLanguages();
   const [selectedLanguages, setSelectedLanguages] = useState(
-    searchCriteria.languages
+    getSearchCriteria().languages
   );
 
   function onSelect(item: SelectMenuItem) {
