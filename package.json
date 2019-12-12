@@ -13,6 +13,7 @@
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
     "evergreen-ui": "4.21.5",
+    "intersection-observer": "^0.7.0",
     "js-yaml": "3.13.1",
     "moment": "2.24.0",
     "react": "16.12.0",
