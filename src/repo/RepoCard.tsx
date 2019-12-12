@@ -49,7 +49,7 @@ export function RepoCardContent({ repo, timeRange }: RepoCardContentProps) {
     const language = languages.find(
       language => language.name === repo.language
     );
-    languageColor = language && language.color;
+    languageColor = language?.color;
   }
 
   return (

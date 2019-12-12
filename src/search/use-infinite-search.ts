@@ -91,14 +91,13 @@ export function useInfiniteSearch() {
   }, [fetchSearch, getSearchCriteria, searchState.queries.length]);
 
   const nextSearch =
-    searchState.queries.length > 0 && searchState.queries.slice(-1)[0];
+    searchState.queries.length > 0 ? searchState.queries.slice(-1)[0] : null;
 
   return {
     queries: searchState.queries,
     fetchInitialSearch,
     isFetchingInitialSearch: searchState.loading,
     fetchNextSearch,
-    isFetchingNextSearch:
-      searchState.loading || (nextSearch && nextSearch.loading)
+    isFetchingNextSearch: searchState.loading || nextSearch?.loading
   } as const;
 }

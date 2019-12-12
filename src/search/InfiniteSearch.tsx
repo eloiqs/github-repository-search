@@ -121,7 +121,7 @@ function SearchQuery({ query }: { query: Query }) {
         <SearchQueryHeaderContent timeRange={query.timeRange} />
       </SearchQueryHeader>
       <Row flexWrap="wrap" justifyContent="center">
-        {(query.results || []).map(repo => (
+        {query.results?.map(repo => (
           <RepoCard key={repo.url} marginX={16}>
             <RepoCardContent repo={repo} timeRange={query.timeRange} />
           </RepoCard>
