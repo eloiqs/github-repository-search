@@ -5,12 +5,9 @@ export type Search = {
   queries: SearchQuery[];
 };
 
-export function createSearch(
-  queries = [] as SearchQuery[],
-  loading = true
-): Search {
+export function createSearch(queries: SearchQuery[], loading: boolean): Search {
   return {
-    loading,
-    queries
+    queries,
+    loading
   };
 }

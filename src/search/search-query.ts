@@ -9,8 +9,8 @@ export type SearchQuery = {
 
 export function createSearchQuery(
   timeRange: TimeRange,
-  results: Repo[] | null = null,
-  loading = true
+  loading: boolean,
+  results: Repo[] | null = null
 ): SearchQuery {
   return {
     timeRange,

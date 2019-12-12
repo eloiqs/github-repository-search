@@ -1,103 +1,104 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useMountedState, useWindowScroll } from 'react-use';
+import { useCallback, useState } from 'react';
+import { useMountedState } from 'react-use';
 import { fetchRepos } from '../api';
 import { usePersonalAccessToken } from '../personal-access-token';
-import { createSearchCriteria, useSearchCriteria } from '../search-criteria';
+import {
+  createSearchCriteria,
+  useSearchCriteria,
+  SearchCriteria
+} from '../search-criteria';
 import { useSearchType } from '../search-type';
 import { createTimeRange } from '../time';
-import { createSearch } from './search';
+import { createSearch, Search } from './search';
 import { createSearchQuery } from './search-query';
+import { Repo } from '../repo';
 
-export function useInfiniteSearch(loadNextOnScroll = true) {
+type FetchSearchConfig = {
+  searchCriteria: SearchCriteria;
+  getLoadingState(state: Search): Search;
+  getResolvedState(repos: Repo[], state: Search): Search;
+};
+
+export function useInfiniteSearch() {
   const isMounted = useMountedState();
   const { personalAccessToken } = usePersonalAccessToken();
   const { searchType } = useSearchType();
   const { getSearchCriteria } = useSearchCriteria();
-  const [search, setSearch] = useState(createSearch());
+  const [searchState, setSearchState] = useState(createSearch([], true));
 
-  const load = useCallback(async () => {
-    setSearch(createSearch([createSearchQuery(getSearchCriteria().timeRange)]));
+  const fetchSearch = useCallback(
+    async ({
+      searchCriteria,
+      getLoadingState,
+      getResolvedState
+    }: FetchSearchConfig) => {
+      setSearchState(state => getLoadingState(state));
 
-    const repos = await fetchRepos(
-      searchType,
-      getSearchCriteria(),
-      personalAccessToken
-    );
+      const repos = await fetchRepos(
+        searchType,
+        searchCriteria,
+        personalAccessToken
+      );
 
-    if (isMounted()) {
-      setSearch(
+      if (isMounted()) {
+        setSearchState(state => getResolvedState(repos, state));
+      }
+    },
+    [isMounted, personalAccessToken, searchType]
+  );
+
+  const fetchInitialSearch = useCallback(async () => {
+    fetchSearch({
+      searchCriteria: getSearchCriteria(),
+      getLoadingState: () =>
         createSearch(
-          [createSearchQuery(getSearchCriteria().timeRange, repos, false)],
+          [createSearchQuery(getSearchCriteria().timeRange, true)],
+          true
+        ),
+      getResolvedState: repos =>
+        createSearch(
+          [createSearchQuery(getSearchCriteria().timeRange, false, repos)],
           false
         )
-      );
-    }
-  }, [getSearchCriteria, isMounted, personalAccessToken, searchType]);
+    });
+  }, [fetchSearch, getSearchCriteria]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const loadNext = useCallback(async () => {
+  const fetchNextSearch = useCallback(async () => {
     const nextTimeRange = createTimeRange(
       getSearchCriteria().timeRange.increments,
-      search.queries.length
+      searchState.queries.length
     );
 
-    const nextQuery = createSearchQuery(nextTimeRange);
-    setSearch(search => {
-      const queries = [...search.queries, nextQuery];
-      return createSearch(queries, search.loading);
-    });
+    const nextQuery = createSearchQuery(nextTimeRange, true);
 
-    const nextCriteria = createSearchCriteria(
-      getSearchCriteria().languages,
-      nextTimeRange
-    );
-
-    const repos = await fetchRepos(
-      searchType,
-      nextCriteria,
-      personalAccessToken
-    );
-
-    if (isMounted()) {
-      setSearch(search => {
+    fetchSearch({
+      searchCriteria: createSearchCriteria(
+        getSearchCriteria().languages,
+        nextTimeRange
+      ),
+      getLoadingState: search => {
+        const queries = [...search.queries, nextQuery];
+        return createSearch(queries, search.loading);
+      },
+      getResolvedState: (repos, search) => {
         const queries = [
           ...search.queries.filter(query => query !== nextQuery),
-          createSearchQuery(nextTimeRange, repos, false)
+          createSearchQuery(nextTimeRange, false, repos)
         ];
         return createSearch(queries, false);
-      });
-    }
-  }, [
-    getSearchCriteria,
-    isMounted,
-    personalAccessToken,
-    search.queries.length,
-    searchType
-  ]);
+      }
+    });
+  }, [fetchSearch, getSearchCriteria, searchState.queries.length]);
 
-  const windowScroll = useWindowScroll();
+  const nextSearch =
+    searchState.queries.length > 0 && searchState.queries.slice(-1)[0];
 
-  useEffect(() => {
-    if (!loadNextOnScroll) return;
-
-    if (search.loading || search.queries.some(query => query.loading)) return;
-
-    if (
-      window.innerHeight + windowScroll.y >=
-      document.documentElement.offsetHeight
-    ) {
-      loadNext();
-    }
-  }, [
-    loadNext,
-    loadNextOnScroll,
-    search.loading,
-    search.queries,
-    windowScroll.y
-  ]);
-
-  return { search, load, loadNext } as const;
+  return {
+    queries: searchState.queries,
+    fetchInitialSearch,
+    isFetchingInitialSearch: searchState.loading,
+    fetchNextSearch,
+    isFetchingNextSearch:
+      searchState.loading || (nextSearch && nextSearch.loading)
+  } as const;
 }

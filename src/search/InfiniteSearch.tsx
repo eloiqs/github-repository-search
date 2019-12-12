@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ContentLoader from 'react-content-loader';
+import { useInView } from 'react-intersection-observer';
 import { RepoCard, RepoCardContent, RepoCardLoader } from '../repo';
 import {
   LanguagesSelectMenu,
@@ -24,24 +25,37 @@ import { useInfiniteSearch } from './use-infinite-search';
 export function InfiniteSearch() {
   const { searchType } = useSearchType();
   const { refreshTimeRange } = useSearchCriteria();
-  const { search } = useInfiniteSearch(searchType === 'most-starred');
+  const {
+    queries,
+    fetchInitialSearch,
+    isFetchingInitialSearch,
+    fetchNextSearch,
+    isFetchingNextSearch
+  } = useInfiniteSearch();
+
+  useEffect(() => {
+    fetchInitialSearch();
+  }, [fetchInitialSearch]);
+
+  const showFooter =
+    searchType === 'most-starred' &&
+    !isFetchingInitialSearch &&
+    !isFetchingNextSearch &&
+    queries.some(query => query.results && query.results.length);
 
   return (
     <Column width={1032} margin="auto">
       <SearchHeader refresh={refreshTimeRange} />
-      {search.loading ? (
+      {isFetchingInitialSearch ? (
         <SearchQueryLoader repoCount={12} />
       ) : (
         <>
-          {search.queries.map(query => (
+          {queries.map(query => (
             <SearchQuery key={JSON.stringify(query.timeRange)} query={query} />
           ))}
-          {searchType === 'most-starred' &&
-            search.queries.every(query => !query.loading) && (
-              <SearchQueryLoader repoCount={3} />
-            )}
         </>
       )}
+      {showFooter && <SearchQueryFooter onVisible={fetchNextSearch} />}
     </Column>
   );
 }
@@ -62,6 +76,22 @@ function SearchHeader({ refresh }: { refresh(): void }) {
         <IconButton icon="refresh" onClick={refresh} aria-label="refresh" />
       </Column>
     </Row>
+  );
+}
+
+function SearchQueryFooter({ onVisible }: { onVisible: () => any }) {
+  const [ref, inView] = useInView({ threshold: 0 });
+
+  useEffect(() => {
+    if (inView) {
+      onVisible();
+    }
+  }, [inView, onVisible]);
+
+  return (
+    <div ref={ref}>
+      <SearchQueryLoader repoCount={3} />
+    </div>
   );
 }
 
