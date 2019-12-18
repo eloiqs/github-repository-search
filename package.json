@@ -8,10 +8,10 @@
   "license": "MIT",
   "dependencies": {
     "@huchenme/github-trending": "^2.1.2",
-    "@octokit/rest": "16.35.0",
+    "@octokit/rest": "16.35.2",
     "@testing-library/jest-dom": "^4.2.4",
-    "@testing-library/react": "^9.3.3",
-    "@testing-library/user-event": "^7.1.2",
+    "@testing-library/react": "^9.4.0",
+    "@testing-library/user-event": "^7.2.1",
     "evergreen-ui": "4.21.5",
     "intersection-observer": "^0.7.0",
     "js-yaml": "3.13.1",
@@ -25,9 +25,9 @@
     "use-persisted-state": "0.3.0"
   },
   "devDependencies": {
-    "@types/jest": "^24.0.23",
+    "@types/jest": "^24.0.24",
     "@types/js-yaml": "3.12.1",
-    "@types/node": "^12.12.17",
+    "@types/node": "^12.12.21",
     "@types/react": "16.9.16",
     "@types/react-dom": "16.9.4",
     "@types/testing-library__react": "^9.1.2",
