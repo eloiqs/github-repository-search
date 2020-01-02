@@ -13,6 +13,7 @@
     "@testing-library/react": "^9.4.0",
     "@testing-library/user-event": "^7.2.1",
     "evergreen-ui": "4.21.5",
+    "faker": "^4.1.0",
     "intersection-observer": "^0.7.0",
     "js-yaml": "3.13.1",
     "moment": "2.24.0",
@@ -25,7 +26,9 @@
     "use-persisted-state": "0.3.0"
   },
   "devDependencies": {
+    "@types/faker": "^4.1.8",
     "@types/jest": "^24.0.24",
+    "@types/jest-when": "^2.7.0",
     "@types/js-yaml": "3.12.1",
     "@types/node": "^12.12.21",
     "@types/react": "16.9.16",
@@ -34,6 +37,7 @@
     "@types/testing-library__user-event": "^4.1.1",
     "@types/use-persisted-state": "0.3.0",
     "gh-pages": "^2.1.1",
+    "jest-when": "^2.7.0",
     "mockdate": "^2.0.5",
     "typescript": "3.7.3"
   },

@@ -4,11 +4,11 @@ export type SearchTypes = 'most-starred' | 'trending';
 
 const usePersistedSearchType = createPersistedState('grs-search-type');
 
-const initialState: SearchTypes = 'most-starred';
+export const initialSearchTypeState: SearchTypes = 'most-starred';
 
 export function useSearchType() {
   const [persistedSearchType, setPersistedSearchType] = usePersistedSearchType(
-    initialState
+    initialSearchTypeState
   );
 
   return {

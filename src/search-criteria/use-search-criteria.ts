@@ -3,7 +3,7 @@ import createPersistedState from 'use-persisted-state';
 import { createTimeRange } from '../time';
 import { createSearchCriteria, SearchCriteria } from './search-criteria';
 
-const initialState = createSearchCriteria();
+export const initialSearchCriteriaState = createSearchCriteria();
 
 const usePersistedSearchCriteria = createPersistedState('grs-search-criteria');
 
@@ -11,7 +11,7 @@ export function useSearchCriteria() {
   const [
     persistedSearchCriteria,
     setPersistedSearchCriteria
-  ] = usePersistedSearchCriteria(initialState);
+  ] = usePersistedSearchCriteria(initialSearchCriteriaState);
 
   const getSearchCriteria = useCallback(() => {
     return getRefreshedSearchCriteria(persistedSearchCriteria);

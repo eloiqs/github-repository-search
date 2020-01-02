@@ -50,7 +50,9 @@ export function TimeRangesPopoverMenu() {
         </Menu>
       )}
     >
-      <Button iconBefore="calendar">{capitalize(timeRangeRecurense)}</Button>
+      <Button iconBefore="calendar" data-testid="time-range-filter">
+        {capitalize(timeRangeRecurense)}
+      </Button>
     </Popover>
   );
 }

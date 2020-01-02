@@ -1,482 +1,603 @@
-import { fetchRepositories } from '@huchenme/github-trending';
-import Octokit, { SearchReposResponseItemsItem } from '@octokit/rest';
 import '@testing-library/jest-dom/extend-expect';
-import { act, fireEvent, render } from '@testing-library/react';
+import faker from 'faker';
+import {
+  act,
+  fireEvent,
+  render,
+  wait,
+  RenderOptions
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { verifyAllWhenMocksCalled, when, resetAllWhenMocks } from 'jest-when';
 import { set as setDate } from 'mockdate';
 import moment from 'moment';
 import React from 'react';
 import { mockAllIsIntersecting } from 'react-intersection-observer/test-utils';
 import * as api from '../api';
-import { TrendingRepo } from '../api/trending-repos';
-import { createSearchCriteria, Language } from '../search-criteria';
-import { toTimeRange } from '../time';
+import { Repo } from '../repo';
+import {
+  createSearchCriteria,
+  initialLanguagesState,
+  initialSearchCriteriaState,
+  SearchCriteria,
+  Language,
+  LanguageState
+} from '../search-criteria';
+import { createTimeRange, toTimeRange } from '../time';
 import { App } from './App';
+import { SearchTypes } from '../search-type';
 
-let mockMostStarredReposResolve: (
-  response: Octokit.Response<Octokit.SearchReposResponse>
-) => void;
+jest.mock('../api');
+const mockApi = api as jest.Mocked<typeof api>;
 
-let mockMostStarredReposRequest = jest.fn(
-  () =>
-    new Promise(resolve => {
-      mockMostStarredReposResolve = resolve;
-    })
-);
+beforeAll(() => {
+  jest.spyOn(console, 'error').mockImplementation();
+  jest.spyOn(console, 'warn').mockImplementation();
+});
 
-jest.mock('@octokit/rest', () =>
-  jest.fn(() => ({
-    search: {
-      repos: mockMostStarredReposRequest
-    }
-  }))
-);
+afterEach(() => {
+  setDate('2019-11-28');
+  localStorage.clear();
+  resetAllWhenMocks();
+});
 
-function createMostStarredReposResponse(
-  items: Partial<SearchReposResponseItemsItem>[]
-) {
-  return {
-    data: { items: items.map(item => ({ ...item, owner: {} })) }
-  } as Octokit.Response<Octokit.SearchReposResponse>;
+afterAll(() => {
+  jest.restoreAllMocks();
+});
+
+function getSearchCriteria() {
+  return JSON.parse(localStorage.getItem('grs-search-criteria'));
 }
 
-let mockTrendingReposResolve: ((response: TrendingRepo[]) => void)[] = [];
-const mockTrendingReposRequest: jest.Mocked<typeof fetchRepositories> = fetchRepositories;
+function setSearchCriteria(criteria: SearchCriteria) {
+  localStorage.setItem('grs-search-criteria', JSON.stringify(criteria));
+}
 
-jest.mock('@huchenme/github-trending', () => ({
-  fetchRepositories: jest.fn(
-    () =>
-      new Promise(resolve => {
-        mockTrendingReposResolve.push(resolve);
-      })
-  )
-}));
+function getLanguages() {
+  return JSON.parse(localStorage.getItem('grs-languages'));
+}
 
-const fetchLanguages = api.fetchLanguages as jest.Mock;
-let mockFetchLanguagesResolve: (languages: Partial<Language>[]) => void;
+function setLanguages(languagesState: typeof initialLanguagesState) {
+  localStorage.setItem('grs-languages', JSON.stringify(languagesState));
+}
 
-jest.mock('../api/fetch-languages', () => ({
-  fetchLanguages: jest.fn(
-    () =>
-      new Promise(resolve => {
-        mockFetchLanguagesResolve = resolve;
-      })
-  )
-}));
+function getSearchType() {
+  return JSON.parse(localStorage.getItem('grs-search-type'));
+}
+
+function setSearchType(searchType: SearchTypes) {
+  localStorage.setItem('grs-search-type', searchType);
+}
+
+function repoBuilder(): Repo {
+  return {
+    name: faker.name.findName(),
+    url: faker.internet.url(),
+    owner: {
+      name: faker.name.findName(),
+      url: faker.internet.url(),
+      avatarUrl: faker.internet.url()
+    },
+    createdAt: moment(faker.date.past()).format(),
+    description: faker.lorem.sentence(),
+    language: faker.lorem.word(),
+    languageColor: faker.internet.color(),
+    stars: faker.random.number(),
+    currentPeriodStars: faker.random.number(),
+    forks: faker.random.number(),
+    issues: faker.random.number()
+  };
+}
+
+function languageBuilder(): Language {
+  return {
+    name: faker.lorem.word(),
+    color: faker.internet.color()
+  };
+}
+
+function renderApp(
+  ui = <App />,
+  {
+    languagesState = { languages: [], timestamp: moment().format() },
+    searchCriteriaState,
+    searchTypeState,
+    ...options
+  }: RenderOptions & {
+    languagesState?: LanguageState;
+    searchCriteriaState?: SearchCriteria;
+    searchTypeState?: SearchTypes;
+  } = {}
+) {
+  setLanguages(languagesState);
+
+  if (searchCriteriaState) {
+    setSearchCriteria(searchCriteriaState);
+  }
+
+  if (searchTypeState) {
+    setSearchType(searchTypeState);
+  }
+
+  const utils = render(ui, options);
+
+  async function whenTheMostStarredReposResolve() {
+    await wait(() =>
+      expect(utils.queryAllByLabelText('Repo loading...').length).toBe(3)
+    );
+    mockApi.fetchRepos.mockClear();
+  }
+
+  async function whenTheTrendingReposResolve() {
+    await wait(() =>
+      expect(utils.queryAllByLabelText('Repo loading...').length).toBe(0)
+    );
+    mockApi.fetchRepos.mockClear();
+  }
+
+  function whenTheAppIsScrolledToBottom() {
+    act(() => {
+      mockAllIsIntersecting(true);
+    });
+  }
+
+  function thenTheSearchResultsContain(
+    results: {
+      header: string;
+      subheader: string;
+      repos: [string, boolean][];
+    }[]
+  ) {
+    results.forEach(({ header, subheader, repos }) => {
+      expect(utils.getByText(header)).toBeVisible();
+      expect(utils.getByText(subheader)).toBeVisible();
+      repos.forEach(([repo, expected]) => {
+        if (expected) {
+          expect(utils.getByText(repo)).toBeVisible();
+        } else {
+          expect(utils.queryByText(repo)).toBeNull();
+        }
+      });
+    });
+  }
+
+  function thenTheActiveSearchTypeIs(searchType: string) {
+    expect(utils.getByText(searchType)).toBeVisible();
+  }
+
+  function whenISelectTheSearchType(searchType: string) {
+    act(() => {
+      userEvent.selectOptions(
+        utils.getByLabelText('Search type'),
+        searchType.toLowerCase()
+      );
+    });
+  }
+
+  function thenTheActiveLanguageFiltersAre(languages: string[]) {
+    expect(utils.getByText(languages.join(', '))).toBeVisible();
+  }
+
+  function thenTheActiveTimeRangeIs(timeRange: string) {
+    expect(utils.getByText(timeRange)).toBeVisible();
+  }
+
+  function whenIOpenTheTimeRangeFilter() {
+    fireEvent.click(utils.getByTestId('time-range-filter'));
+  }
+
+  async function whenTheTimeRangeFilterOptionsAreVisible(expected: boolean) {
+    if (expected) {
+      expect(utils.getByRole('menu')).toBeVisible();
+      expect(utils.getByText('Monthly')).toBeVisible();
+      expect(utils.getByText('Weekly')).toBeVisible();
+      expect(utils.getByText('Daily')).toBeVisible();
+    } else {
+      await wait(() => {
+        expect(utils.queryByRole('menu')).toBeNull();
+      });
+    }
+  }
+
+  function whenISelectTheTimeRangeFilter(filter: string) {
+    fireEvent.click(utils.getByText(filter));
+  }
+
+  async function whenIOpenTheLanguagesFilter() {
+    fireEvent.click(utils.getByTestId('languages-filter'));
+    await wait(() => {
+      expect(utils.getByRole('dialog')).toBeVisible();
+    });
+  }
+
+  function thenTheLanguagesFilterHasLanguages(languages: [string, boolean][]) {
+    languages.forEach(([language, expected]) => {
+      if (expected) {
+        expect(utils.getByText(language)).toBeVisible();
+      } else {
+        expect(utils.queryByText(language)).toBeNull();
+      }
+    });
+  }
+
+  function whenITypeInTheLanguageFilter(language: string) {
+    userEvent.type(utils.getByPlaceholderText('Filter...'), language);
+  }
+
+  function whenISelectTheLanguagesFilterLanguage(language: string) {
+    fireEvent.click(utils.getByText(language));
+  }
+
+  function whenIRefreshTheSearch() {
+    fireEvent.click(utils.getByLabelText('refresh'));
+  }
+
+  return {
+    ...utils,
+    whenTheMostStarredReposResolve,
+    whenTheTrendingReposResolve,
+    whenTheAppIsScrolledToBottom,
+    thenTheSearchResultsContain,
+    thenTheActiveSearchTypeIs,
+    whenISelectTheSearchType,
+    thenTheActiveLanguageFiltersAre,
+    thenTheActiveTimeRangeIs,
+    whenIOpenTheLanguagesFilter,
+    whenTheTimeRangeFilterOptionsAreVisible,
+    whenISelectTheTimeRangeFilter,
+    thenTheLanguagesFilterHasLanguages,
+    whenITypeInTheLanguageFilter,
+    whenISelectTheLanguagesFilterLanguage,
+    whenIOpenTheTimeRangeFilter,
+    whenIRefreshTheSearch
+  };
+}
 
 test('searches repos with the default criteria', async () => {
-  const { getByText, getAllByLabelText } = render(<App />);
+  const repos = [repoBuilder(), repoBuilder()];
 
-  expect(getByText('Filter languages')).toBeVisible();
-  expect(getByText('Yearly')).toBeVisible();
-  expect(getAllByLabelText('Repo loading...').length).toBe(12);
-  expect(mockMostStarredReposRequest).toBeCalledWith({
-    q: 'created:2018-11-27..2019-11-27',
-    sort: 'stars'
-  });
+  when(mockApi.fetchRepos)
+    .expectCalledWith('most-starred', initialSearchCriteriaState, '')
+    .mockResolvedValueOnce([repos[0]]);
 
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'repo_url', name: 'some repo' }
-      ])
-    );
-  });
+  when(mockApi.fetchRepos)
+    .expectCalledWith(
+      'most-starred',
+      createSearchCriteria(
+        initialSearchCriteriaState.languages,
+        createTimeRange(initialSearchCriteriaState.timeRange.increments, 1)
+      ),
+      ''
+    )
+    .mockResolvedValueOnce([repos[1]]);
 
-  expect(getAllByLabelText('Repo loading...').length).toBe(3);
-  expect(getByText('A year ago')).toBeVisible();
-  expect(getByText('November 27, 2018 – November 27, 2019')).toBeVisible();
-  expect(getByText('some repo')).toBeVisible();
+  const {
+    whenTheMostStarredReposResolve,
+    whenTheAppIsScrolledToBottom,
+    thenTheSearchResultsContain,
+    thenTheActiveLanguageFiltersAre,
+    thenTheActiveTimeRangeIs,
+    thenTheActiveSearchTypeIs
+  } = renderApp(<App />);
+
+  expect(getSearchCriteria()).toEqual(initialSearchCriteriaState);
+
+  thenTheActiveSearchTypeIs('Most starred');
+  thenTheActiveLanguageFiltersAre(['Filter languages']);
+  thenTheActiveTimeRangeIs('Yearly');
+
+  await whenTheMostStarredReposResolve();
+
+  thenTheSearchResultsContain([
+    {
+      header: 'A year ago',
+      subheader: 'November 27, 2018 – November 27, 2019',
+      repos: [[repos[0].name, true]]
+    }
+  ]);
+
+  whenTheAppIsScrolledToBottom();
+  await whenTheMostStarredReposResolve();
+
+  thenTheSearchResultsContain([
+    {
+      header: 'A year ago',
+      subheader: 'November 27, 2018 – November 27, 2019',
+      repos: [[repos[0].name, true]]
+    },
+    {
+      header: '2 years ago',
+      subheader: 'November 27, 2017 – November 27, 2018',
+      repos: [[repos[1].name, true]]
+    }
+  ]);
+
+  verifyAllWhenMocksCalled();
 });
 
 test('searches repos with the localStorage criteria', async () => {
-  localStorage.setItem(
-    'grs-search-criteria',
-    JSON.stringify(
-      createSearchCriteria(['JavaScript', 'TypeScript'], toTimeRange('weekly'))
-    )
+  const languages = [languageBuilder().name, languageBuilder().name];
+  const searchCriteriaState = createSearchCriteria(
+    languages,
+    toTimeRange('weekly')
   );
 
-  const { getByText, getAllByLabelText } = render(<App />);
+  const repos = [repoBuilder(), repoBuilder()];
 
-  expect(getByText('JavaScript, TypeScript')).toBeVisible();
-  expect(getByText('Weekly')).toBeVisible();
-  expect(getAllByLabelText('Repo loading...').length).toBe(12);
-  expect(mockMostStarredReposRequest).toBeCalledWith({
-    q: 'language:JavaScript+language:TypeScript+created:2019-11-20..2019-11-27',
-    sort: 'stars'
-  });
-  expect(JSON.parse(localStorage.getItem('grs-search-criteria'))).toEqual({
-    languages: ['JavaScript', 'TypeScript'],
-    timeRange: {
-      increments: 'week',
-      from: '2019-11-20',
-      to: '2019-11-27'
-    },
-    order: 'desc',
-    page: 0,
-    per_page: 20
+  when(mockApi.fetchRepos)
+    .expectCalledWith('most-starred', searchCriteriaState, '')
+    .mockResolvedValueOnce(repos);
+
+  const {
+    whenTheMostStarredReposResolve,
+    thenTheSearchResultsContain
+  } = renderApp(<App />, {
+    searchCriteriaState
   });
 
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'repo_url', name: 'some repo' }
-      ])
-    );
-  });
+  expect(getSearchCriteria()).toEqual(searchCriteriaState);
 
-  expect(getAllByLabelText('Repo loading...').length).toBe(3);
-  expect(getByText('8 days ago')).toBeVisible();
-  expect(getByText('November 20, 2019 – November 27, 2019')).toBeVisible();
-  expect(getByText('some repo')).toBeVisible();
-});
+  await whenTheMostStarredReposResolve();
 
-test('allows loading the next increment of results', async () => {
-  const { getByText, getAllByLabelText, queryByText } = render(<App />);
+  thenTheSearchResultsContain([
+    {
+      header: '8 days ago',
+      subheader: 'November 20, 2019 – November 27, 2019',
+      repos: [
+        [repos[0].name, true],
+        [repos[1].name, true]
+      ]
+    }
+  ]);
 
-  mockMostStarredReposRequest.mockClear();
-
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'repo_url', name: 'some repo' }
-      ])
-    );
-  });
-
-  expect(getAllByLabelText('Repo loading...').length).toBe(3);
-
-  act(() => {
-    mockAllIsIntersecting(true);
-  });
-
-  expect(getAllByLabelText('Repo loading...').length).toBe(12);
-  expect(getByText('some repo')).toBeVisible();
-  expect(queryByText('Load next year')).toBeNull();
-  expect(mockMostStarredReposRequest).toBeCalledWith({
-    q: 'created:2017-11-27..2018-11-27',
-    sort: 'stars'
-  });
-
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'other_repo_url', name: 'some other repo' }
-      ])
-    );
-  });
-
-  expect(getAllByLabelText('Repo loading...').length).toBe(3);
-  expect(getByText('2 years ago')).toBeVisible();
-  expect(getByText('November 27, 2017 – November 27, 2018')).toBeVisible();
-  expect(getByText('some other repo')).toBeVisible();
+  verifyAllWhenMocksCalled();
 });
 
 test('searches repos when the language changes', async () => {
-  localStorage.setItem(
-    'grs-languages',
-    JSON.stringify({
-      languages: [{ name: 'JavaScript' }, { name: 'TypeScript' }]
-    })
-  );
+  const languages = [languageBuilder(), languageBuilder()];
+  const languagesState = { languages, timestamp: moment().format() };
+
+  const repos = [repoBuilder(), repoBuilder()];
+
+  when(mockApi.fetchRepos)
+    .expectCalledWith('most-starred', initialSearchCriteriaState, '')
+    .mockResolvedValueOnce([repos[0]]);
+
+  when(mockApi.fetchRepos)
+    .expectCalledWith(
+      'most-starred',
+      createSearchCriteria(
+        [languages[1].name],
+        initialSearchCriteriaState.timeRange
+      ),
+      ''
+    )
+    .mockResolvedValueOnce([repos[1]]);
 
   const {
-    getByText,
-    queryByText,
-    getByPlaceholderText,
-    getByRole,
-    getAllByLabelText
-  } = render(<App />);
+    whenTheMostStarredReposResolve,
+    thenTheSearchResultsContain,
+    whenIOpenTheLanguagesFilter,
+    thenTheLanguagesFilterHasLanguages,
+    whenITypeInTheLanguageFilter,
+    whenISelectTheLanguagesFilterLanguage
+  } = renderApp(<App />, { languagesState });
 
-  mockMostStarredReposRequest.mockClear();
+  expect(getLanguages()).toEqual(languagesState);
 
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'repo_url', name: 'some repo' }
-      ])
-    );
-  });
+  await whenTheMostStarredReposResolve();
 
-  act(() => {
-    mockAllIsIntersecting(true);
-  });
+  thenTheSearchResultsContain([
+    {
+      header: 'A year ago',
+      subheader: 'November 27, 2018 – November 27, 2019',
+      repos: [[repos[0].name, true]]
+    }
+  ]);
 
-  expect(mockMostStarredReposRequest).toHaveBeenCalled();
+  whenIOpenTheLanguagesFilter();
+  thenTheLanguagesFilterHasLanguages([
+    [languages[0].name, true],
+    [languages[1].name, true]
+  ]);
 
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'other_repo_url', name: 'some other repo' }
-      ])
-    );
-  });
+  whenITypeInTheLanguageFilter(languages[1].name);
+  thenTheLanguagesFilterHasLanguages([
+    [languages[0].name, false],
+    [languages[1].name, true]
+  ]);
 
-  expect(getAllByLabelText('Repo loading...').length).toBe(3);
-  expect(getByText('2 years ago')).toBeVisible();
+  whenISelectTheLanguagesFilterLanguage(languages[1].name);
 
-  fireEvent.click(getByText('Filter languages'));
+  await whenTheMostStarredReposResolve();
 
-  expect(getByRole('dialog')).toBeVisible();
-  expect(getByText('JavaScript')).toBeVisible();
-  expect(getByText('TypeScript')).toBeVisible();
+  thenTheSearchResultsContain([
+    {
+      header: 'A year ago',
+      subheader: 'November 27, 2018 – November 27, 2019',
+      repos: [
+        [repos[0].name, false],
+        [repos[1].name, true]
+      ]
+    }
+  ]);
 
-  userEvent.type(getByPlaceholderText('Filter...'), 'TypeScript');
-
-  expect(queryByText('JavaScript')).toBeNull();
-  expect(getByRole('dialog')).toBeVisible();
-  expect(getByText('TypeScript')).toBeVisible();
-
-  fireEvent.click(getByText('TypeScript'));
-
-  expect(getAllByLabelText('Repo loading...').length).toBe(12);
-  expect(queryByText('Load next year')).toBeNull();
-  expect(queryByText('2 years ago')).toBeNull();
-  expect(mockMostStarredReposRequest).toBeCalledWith({
-    q: 'language:TypeScript+created:2018-11-27..2019-11-27',
-    sort: 'stars'
-  });
-
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'repo_url', name: 'some repo' }
-      ])
-    );
-  });
-
-  expect(getAllByLabelText('Repo loading...').length).toBe(3);
-  expect(getByText('A year ago')).toBeVisible();
-  expect(getByText('November 27, 2018 – November 27, 2019')).toBeVisible();
-  expect(getByText('some repo')).toBeVisible();
+  verifyAllWhenMocksCalled();
 });
 
 test('searches repos when the time increment changes', async () => {
-  const { getAllByLabelText, getByText, getByRole, queryByText } = render(
-    <App />
-  );
+  const repos = [repoBuilder(), repoBuilder()];
 
-  mockMostStarredReposRequest.mockClear();
+  when(mockApi.fetchRepos)
+    .expectCalledWith('most-starred', initialSearchCriteriaState, '')
+    .mockResolvedValueOnce([repos[0]]);
 
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'repo_url', name: 'some repo' }
-      ])
-    );
-  });
+  when(mockApi.fetchRepos)
+    .expectCalledWith(
+      'most-starred',
+      createSearchCriteria(
+        initialSearchCriteriaState.languages,
+        createTimeRange('week', 0)
+      ),
+      ''
+    )
+    .mockResolvedValueOnce([repos[1]]);
 
-  act(() => {
-    mockAllIsIntersecting(true);
-  });
+  const {
+    whenTheMostStarredReposResolve,
+    thenTheActiveTimeRangeIs,
+    whenIOpenTheTimeRangeFilter,
+    thenTheSearchResultsContain,
+    whenTheTimeRangeFilterOptionsAreVisible,
+    whenISelectTheTimeRangeFilter
+  } = renderApp();
 
-  expect(mockMostStarredReposRequest).toBeCalled();
+  thenTheActiveTimeRangeIs('Yearly');
+  await whenTheTimeRangeFilterOptionsAreVisible(false);
 
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'other_repo_url', name: 'some other repo' }
-      ])
-    );
-  });
+  await whenTheMostStarredReposResolve();
 
-  expect(getAllByLabelText('Repo loading...').length).toBe(3);
-  expect(getByText('2 years ago')).toBeVisible();
+  whenIOpenTheTimeRangeFilter();
+  await whenTheTimeRangeFilterOptionsAreVisible(true);
 
-  fireEvent.click(getByText('Yearly'));
+  whenISelectTheTimeRangeFilter('Weekly');
+  await whenTheTimeRangeFilterOptionsAreVisible(false);
+  thenTheActiveTimeRangeIs('Weekly');
 
-  expect(getByRole('menu')).toBeVisible();
-  expect(getByText('Monthly')).toBeVisible();
-  expect(getByText('Weekly')).toBeVisible();
-  expect(getByText('Daily')).toBeVisible();
+  await whenTheMostStarredReposResolve();
 
-  fireEvent.click(getByText('Weekly'));
+  thenTheSearchResultsContain([
+    {
+      header: '8 days ago',
+      subheader: 'November 20, 2019 – November 27, 2019',
+      repos: [
+        [repos[0].name, false],
+        [repos[1].name, true]
+      ]
+    }
+  ]);
 
-  expect(getAllByLabelText('Repo loading...').length).toBe(12);
-  expect(queryByText('Load next week')).toBeNull();
-  expect(queryByText('2 years ago')).toBeNull();
-  expect(mockMostStarredReposRequest).toBeCalledWith({
-    q: 'created:2019-11-20..2019-11-27',
-    sort: 'stars'
-  });
-
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'repo_url', name: 'some repo' }
-      ])
-    );
-  });
-
-  expect(getAllByLabelText('Repo loading...').length).toBe(3);
-  expect(getByText('8 days ago')).toBeVisible();
-  expect(getByText('November 20, 2019 – November 27, 2019')).toBeVisible();
-  expect(getByText('some repo')).toBeVisible();
-});
-
-test('allows refreshing the search with an updated time range', async () => {
-  const { getByText, getByLabelText, getAllByLabelText, queryByText } = render(
-    <App />
-  );
-
-  mockMostStarredReposRequest.mockClear();
-
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'repo_url', name: 'some repo' }
-      ])
-    );
-  });
-
-  expect(getByText('some repo')).toBeVisible();
-
-  act(() => {
-    mockAllIsIntersecting(true);
-  });
-
-  expect(mockMostStarredReposRequest).toBeCalled();
-
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'other_repo_url', name: 'some other repo' }
-      ])
-    );
-  });
-
-  expect(getByText('some other repo')).toBeVisible();
-  expect(getAllByLabelText('Repo loading...').length).toBe(3);
-
-  setDate('2019-11-29');
-  fireEvent.click(getByLabelText('refresh'));
-
-  expect(getAllByLabelText('Repo loading...').length).toBe(12);
-  expect(queryByText('2 years ago')).toBeNull();
-  expect(mockMostStarredReposRequest).toBeCalledWith({
-    q: 'created:2018-11-28..2019-11-28',
-    sort: 'stars'
-  });
-
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'repo_url', name: 'some repo' }
-      ])
-    );
-  });
-
-  expect(getAllByLabelText('Repo loading...').length).toBe(3);
-  expect(getByText('A year ago')).toBeVisible();
-  expect(getByText('November 28, 2018 – November 28, 2019')).toBeVisible();
-  expect(getByText('some repo')).toBeVisible();
-});
-
-test('allows searching for trending repos', async () => {
-  localStorage.setItem(
-    'grs-languages',
-    JSON.stringify({
-      languages: [{ name: 'JavaScript' }, { name: 'TypeScript' }]
-    })
-  );
-
-  localStorage.setItem(
-    'grs-search-criteria',
-    JSON.stringify(
-      createSearchCriteria(['JavaScript', 'TypeScript'], toTimeRange('daily'))
+  expect(getSearchCriteria()).toEqual(
+    createSearchCriteria(
+      initialSearchCriteriaState.languages,
+      createTimeRange('week', 0)
     )
   );
 
-  const { getByText, getByLabelText } = render(<App />);
+  verifyAllWhenMocksCalled();
+});
 
-  await act(async () => {
-    mockMostStarredReposResolve(
-      createMostStarredReposResponse([
-        { html_url: 'repo_url', name: 'some repo' }
-      ])
-    );
-  });
+test('allows refreshing the search', async () => {
+  const repos = [repoBuilder(), repoBuilder()];
 
-  expect((getByText('Most starred') as HTMLOptionElement).selected).toBe(true);
+  when(mockApi.fetchRepos)
+    .expectCalledWith('most-starred', initialSearchCriteriaState, '')
+    .mockResolvedValueOnce([repos[0]]);
 
-  await act(async () => {
-    userEvent.selectOptions(getByLabelText('Search type'), 'trending');
-  });
+  when(mockApi.fetchRepos)
+    .expectCalledWith(
+      'most-starred',
+      createSearchCriteria(initialSearchCriteriaState.languages, {
+        from: '2018-11-28',
+        increments: 'year',
+        to: '2019-11-28'
+      }),
+      ''
+    )
+    .mockResolvedValueOnce([repos[1]]);
 
-  expect((getByText('Trending') as HTMLOptionElement).selected).toBe(true);
-  expect(mockTrendingReposRequest).toBeCalledWith({
-    since: 'daily',
-    language: 'TypeScript'
-  });
-  expect(mockTrendingReposRequest).toBeCalledWith({
-    since: 'daily',
-    language: 'JavaScript'
-  });
+  const { whenIRefreshTheSearch, whenTheMostStarredReposResolve } = renderApp();
 
-  await act(async () => {
-    mockTrendingReposResolve.pop()([
-      { name: 'some repo', url: 'repo_url' } as TrendingRepo
-    ]);
-    mockTrendingReposResolve.pop()([
-      { name: 'some other repo', url: 'other_repo_url' } as TrendingRepo
-    ]);
-  });
+  await whenTheMostStarredReposResolve();
 
-  expect(getByText('some repo')).toBeVisible();
-  expect(getByText('some other repo')).toBeVisible();
+  setDate('2019-11-29');
+  whenIRefreshTheSearch();
 
-  mockTrendingReposRequest.mockClear();
+  expect(getSearchCriteria()).toEqual(
+    createSearchCriteria(initialSearchCriteriaState.languages, {
+      from: '2018-11-28',
+      increments: 'year',
+      to: '2019-11-28'
+    })
+  );
 
-  act(() => {
-    mockAllIsIntersecting(true);
-  });
+  verifyAllWhenMocksCalled();
+});
 
-  expect(mockTrendingReposRequest).not.toBeCalled();
+test('allows searching for trending repos', async () => {
+  const repos = [repoBuilder(), repoBuilder()];
+
+  when(mockApi.fetchRepos)
+    .expectCalledWith('most-starred', initialSearchCriteriaState, '')
+    .mockResolvedValueOnce([repos[0]]);
+
+  when(mockApi.fetchRepos)
+    .expectCalledWith('trending', initialSearchCriteriaState, '')
+    .mockResolvedValueOnce([repos[1]]);
+
+  const {
+    whenTheMostStarredReposResolve,
+    whenTheTrendingReposResolve,
+    whenTheAppIsScrolledToBottom,
+    thenTheActiveSearchTypeIs,
+    thenTheSearchResultsContain,
+    whenISelectTheSearchType
+  } = renderApp();
+
+  thenTheActiveSearchTypeIs('Most starred');
+
+  await whenTheMostStarredReposResolve();
+
+  whenISelectTheSearchType('Trending');
+  thenTheActiveSearchTypeIs('Trending');
+
+  await whenTheTrendingReposResolve();
+
+  thenTheSearchResultsContain([
+    {
+      header: 'A year ago',
+      subheader: 'November 27, 2018 – November 27, 2019',
+      repos: [
+        [repos[0].name, false],
+        [repos[1].name, true]
+      ]
+    }
+  ]);
+
+  expect(getSearchType()).toEqual('trending');
+
+  whenTheAppIsScrolledToBottom();
+  expect(mockApi.fetchRepos).not.toBeCalled();
+
+  verifyAllWhenMocksCalled();
 });
 
 test('gets the latest languages data from github once per day', async () => {
-  fetchLanguages.mockClear();
+  const languages = [languageBuilder(), languageBuilder()];
+  when(mockApi.fetchLanguages)
+    .expectCalledWith()
+    .mockResolvedValueOnce(languages);
 
-  setDate('2019-12-01');
-  localStorage.setItem(
-    'grs-languages',
-    JSON.stringify({
-      timestamp: moment().format(),
-      languages: [{ name: 'JavaScript' }]
-    })
-  );
+  const {
+    unmount,
+    rerender,
+    whenIOpenTheLanguagesFilter,
+    thenTheLanguagesFilterHasLanguages
+  } = renderApp();
 
-  const queries = render(<App />);
+  expect(mockApi.fetchLanguages).not.toHaveBeenCalled();
 
-  expect(fetchLanguages).not.toBeCalled();
+  await whenIOpenTheLanguagesFilter();
 
   setDate('2019-11-30');
-  localStorage.setItem(
-    'grs-languages',
-    JSON.stringify({
-      timestamp: moment().format(),
-      languages: [{ name: 'JavaScript' }]
-    })
-  );
+  unmount();
+  rerender(<App />);
 
-  setDate('2019-12-01');
-  queries.unmount();
-  queries.rerender(<App />);
+  await whenIOpenTheLanguagesFilter();
+  thenTheLanguagesFilterHasLanguages([
+    [languages[0].name, true],
+    [languages[1].name, true]
+  ]);
 
-  expect(fetchLanguages).toBeCalledWith();
-
-  fireEvent.click(queries.getByText('Filter languages'));
-
-  expect(queries.getByRole('dialog')).toBeVisible();
-  expect(queries.getByText('JavaScript')).toBeVisible();
-  expect(queries.queryByText('TypeScript')).toBeNull();
-
-  await act(async () => {
-    mockFetchLanguagesResolve([{ name: 'JavaScript' }, { name: 'TypeScript' }]);
-  });
-
-  expect(queries.getByRole('dialog')).toBeVisible();
-  expect(queries.getByText('JavaScript')).toBeVisible();
-  expect(queries.getByText('TypeScript')).toBeVisible();
+  verifyAllWhenMocksCalled();
 });

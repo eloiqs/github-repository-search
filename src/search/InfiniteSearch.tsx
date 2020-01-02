@@ -50,8 +50,12 @@ export function InfiniteSearch() {
         <SearchQueryLoader repoCount={12} />
       ) : (
         <>
-          {queries.map(query => (
-            <SearchQuery key={JSON.stringify(query.timeRange)} query={query} />
+          {queries.map((query, index) => (
+            <SearchQuery
+              key={JSON.stringify(query.timeRange)}
+              index={index}
+              query={query}
+            />
           ))}
         </>
       )}
@@ -112,11 +116,11 @@ function SearchQueryLoader({ repoCount }: { repoCount: number }) {
   );
 }
 
-function SearchQuery({ query }: { query: Query }) {
+function SearchQuery({ query, index }: { query: Query; index: number }) {
   return query.loading ? (
     <SearchQueryLoader repoCount={12} />
   ) : (
-    <>
+    <div data-testid={`query-${index}`}>
       <SearchQueryHeader>
         <SearchQueryHeaderContent timeRange={query.timeRange} />
       </SearchQueryHeader>
@@ -127,7 +131,7 @@ function SearchQuery({ query }: { query: Query }) {
           </RepoCard>
         ))}
       </Row>
-    </>
+    </div>
   );
 }
 

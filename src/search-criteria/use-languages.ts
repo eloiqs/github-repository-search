@@ -11,9 +11,14 @@ export type Language = {
   color: string;
 };
 
-const initialState = {
-  languages: [] as Language[],
-  timestamp: null as string | null
+export type LanguageState = {
+  languages: Language[];
+  timestamp: string | null;
+};
+
+export const initialLanguagesState: LanguageState = {
+  languages: [],
+  timestamp: null
 };
 
 export function useLanguages() {
@@ -22,7 +27,7 @@ export function useLanguages() {
   const [
     { languages: persistedLanguages, timestamp },
     setPersistedLanguages
-  ] = usePersistedLanguages(initialState);
+  ] = usePersistedLanguages(initialLanguagesState);
 
   useEffect(() => {
     if (!timestamp || moment().diff(moment(timestamp), 'days') > 0) {

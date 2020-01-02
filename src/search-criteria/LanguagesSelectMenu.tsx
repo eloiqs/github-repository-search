@@ -44,7 +44,9 @@ export function LanguagesSelectMenu() {
       onSelect={onSelect}
       onDeselect={onDeselect}
     >
-      <Button iconBefore="filter">{label}</Button>
+      <Button iconBefore="filter" data-testid="languages-filter">
+        {label}
+      </Button>
     </SelectMenu>
   );
 }
