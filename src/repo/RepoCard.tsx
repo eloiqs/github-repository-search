@@ -120,7 +120,7 @@ export function RepoCardContent({ repo, timeRange }: RepoCardContentProps) {
             </Column>
             <Column />
           </Row>
-          <Row height={56}>
+          <Row height={62}>
             <FadeText>{repo.description}</FadeText>
           </Row>
         </Column>
